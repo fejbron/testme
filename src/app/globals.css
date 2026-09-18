@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+:root { --bg: #0a0e14; --panel: #111722; --border: #1e2937; --fg: #d7e0ea; --muted: #7d8ba0; --accent: #39d3bb; --danger: #ff6b6b; }
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
+a { color: var(--accent); }
