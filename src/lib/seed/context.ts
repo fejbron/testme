@@ -1,4 +1,3 @@
-import "server-only";
 import { prisma } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { createSeedContext, type SeedContext } from "./index";

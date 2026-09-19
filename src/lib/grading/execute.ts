@@ -1,4 +1,3 @@
-import "server-only";
 import { prisma } from "@/lib/db";
 import { loadSeedContext } from "@/lib/seed/context";
 import { deriveGrading } from "./janus";

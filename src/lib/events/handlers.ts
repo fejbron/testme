@@ -25,14 +25,17 @@ export async function processEvent(eventId: string): Promise<void> {
 }
 
 async function runOnce(eventId: string, handlerName: string, fn: (tx: Prisma.TransactionClient) => Promise<void>): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    try {
-      await tx.processedEvent.create({ data: { eventId, handlerName } });
-    } catch {
-      return; // already processed (unique violation) — idempotent no-op
-    }
-    await fn(tx);
-  });
+  await prisma.$transaction(
+    async (tx) => {
+      try {
+        await tx.processedEvent.create({ data: { eventId, handlerName } });
+      } catch {
+        return; // already processed (unique violation) — idempotent no-op
+      }
+      await fn(tx);
+    },
+    { timeout: 30_000, maxWait: 10_000 },
+  );
 }
 
 /** Unlock every stage that REQUIRES the completed stage, once all its requirements are COMPLETED. */

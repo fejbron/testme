@@ -6,5 +6,5 @@ for (const line of txt.split(/\r?\n/)) {
   if (m) process.env[m[1]] = m[2].replace(/^"|"$/g, "");
 }
 const args = process.argv.slice(2);
-const r = spawnSync(process.execPath, ["node_modules/tsx/dist/cli.mjs", ...args], { stdio: "inherit", env: process.env });
+const r = spawnSync(process.execPath, ["--conditions=react-server", "node_modules/tsx/dist/cli.mjs", ...args], { stdio: "inherit", env: process.env });
 process.exit(r.status ?? 1);

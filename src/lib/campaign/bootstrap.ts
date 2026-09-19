@@ -71,5 +71,5 @@ export async function startCampaignInstance(campaignInstanceId: string): Promise
       { type: JobType.PROVISION_ENVIRONMENT, payload: { campaignInstanceId }, idempotencyKey: `provision:${campaignInstanceId}` },
       tx,
     );
-  });
+  }, { timeout: 30_000, maxWait: 10_000 });
 }

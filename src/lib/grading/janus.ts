@@ -1,4 +1,3 @@
-import "server-only";
 import type { SeedContext } from "@/lib/seed";
 import { generators } from "../../../challenges/janus/generators";
 import type { FindingSpec } from "@/lib/graders/finding";
