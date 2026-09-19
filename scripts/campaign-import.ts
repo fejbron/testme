@@ -29,6 +29,10 @@ const KNOWN_GRADERS = [
   "ledger-walk",
   "vm-interp",
   "log-forensics",
+  // bootcamp / fieldwork (generic)
+  "text-answer",
+  "log-finding",
+  "script-check",
 ];
 const KNOWN_GENERATORS = [
   // janus
@@ -44,6 +48,20 @@ const KNOWN_GENERATORS = [
   "ledger",
   "stackvm",
   "injection",
+  // bootcamp
+  "welcome",
+  "rotate",
+  "hexdump",
+  "tally",
+  "needle",
+  "binary",
+  // fieldwork
+  "caesar",
+  "vigenere",
+  "jwt",
+  "layers",
+  "weblog",
+  "csvsum",
 ];
 
 const COMPLETION_MAP: Record<string, CompletionType> = {

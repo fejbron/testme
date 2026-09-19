@@ -1,0 +1,131 @@
+apiVersion: cyberrange/v1
+
+campaign:
+  slug: bootcamp
+  name: Boot Camp
+  description: >
+    Start here. Six short warm-ups that teach the moves every later campaign
+    assumes: decode data, read a dump, search a haystack, count what matters.
+    Everything is personalized, so the answer is yours alone.
+  estimatedHours: 2
+  difficulty: beginner
+
+environment:
+  workstation:
+    image: vercel/sandbox/universal
+
+stages:
+  - id: decode-1
+    title: First Contact
+    description: >
+      A short message was encoded so it survives copy-paste. It is not encrypted.
+      Turn it back into text and read the token inside.
+    points: 50
+    estimatedMinutes: 10
+    visibility:
+      default: true
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: message, type: file, generator: welcome }
+    hints:
+      - { level: 1, penalty: 3, content: "The character set is A-Z, a-z, 0-9, + and / — that is base64." }
+      - { level: 2, penalty: 6, content: "Any base64 decoder (or `base64 -d`) turns it back to plain text." }
+      - { level: 3, penalty: 10, content: "Decode it, then read the token after the label." }
+    onComplete:
+      - unlock: decode-2
+
+  - id: decode-2
+    title: Wheel Lock
+    description: >
+      This note looks like gibberish, but every letter was simply rotated by a
+      fixed amount. Undo the rotation.
+    points: 50
+    estimatedMinutes: 10
+    requires: [decode-1]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: note, type: file, generator: rotate }
+    hints:
+      - { level: 1, penalty: 3, content: "Only letters moved; digits and symbols stayed put." }
+      - { level: 2, penalty: 6, content: "It is ROT13 — rotate every letter by 13." }
+      - { level: 3, penalty: 10, content: "Apply ROT13 and read the token." }
+    onComplete:
+      - unlock: decode-3
+
+  - id: decode-3
+    title: Raw Bytes
+    description: >
+      A string of hex digits. Each pair is one byte of ASCII. Convert it back.
+    points: 50
+    estimatedMinutes: 10
+    requires: [decode-2]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: data, type: file, generator: hexdump }
+    hints:
+      - { level: 1, penalty: 3, content: "Two hex characters = one byte. `xxd -r -p` or any hex decoder works." }
+      - { level: 2, penalty: 6, content: "41 is 'A', 42 is 'B' — decode the whole string." }
+      - { level: 3, penalty: 10, content: "Decode to ASCII and read the token." }
+    onComplete:
+      - unlock: count
+
+  - id: count
+    title: Head Count
+    description: >
+      A list of numbers, one per line. Report their exact total.
+    points: 50
+    estimatedMinutes: 10
+    requires: [decode-3]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: numbers, type: file, generator: tally }
+    hints:
+      - { level: 1, penalty: 3, content: "Add every line. A calculator is fine; a one-liner is faster." }
+      - { level: 2, penalty: 6, content: "`paste -sd+ numbers.txt | bc` sums them." }
+      - { level: 3, penalty: 10, content: "Submit the single integer total." }
+    onComplete:
+      - unlock: search
+
+  - id: search
+    title: Needle
+    description: >
+      One line in this log carries a secret. The rest is noise. Find it.
+    points: 50
+    estimatedMinutes: 10
+    requires: [count]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: haystack, type: log_archive, generator: needle }
+    hints:
+      - { level: 1, penalty: 3, content: "Search for the word SECRET." }
+      - { level: 2, penalty: 6, content: "`grep SECRET haystack.log` finds the line." }
+      - { level: 3, penalty: 10, content: "Submit the token after SECRET=." }
+    onComplete:
+      - unlock: decode-4
+
+  - id: decode-4
+    title: On and Off
+    description: >
+      Ones and zeros, grouped in eights. Each group is one character.
+    points: 50
+    estimatedMinutes: 10
+    requires: [search]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: bits, type: file, generator: binary }
+    hints:
+      - { level: 1, penalty: 3, content: "Each 8-bit group is one ASCII byte." }
+      - { level: 2, penalty: 6, content: "01000001 is 65 is 'A'. Convert each group." }
+      - { level: 3, penalty: 10, content: "Decode all groups and read the token." }

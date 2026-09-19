@@ -1,0 +1,133 @@
+apiVersion: cyberrange/v1
+
+campaign:
+  slug: fieldwork
+  name: Field Work
+  description: >
+    A step up. Real classical ciphers, a forged token, layered encodings, and
+    logs that hide an intruder. Some stages want a short script, not just an eye.
+    Personalized per analyst.
+  estimatedHours: 5
+  difficulty: intermediate
+
+environment:
+  workstation:
+    image: vercel/sandbox/universal
+
+stages:
+  - id: shift
+    title: Intercept
+    description: >
+      An intercepted message, shifted by an unknown amount. Recover the plaintext.
+    points: 100
+    estimatedMinutes: 25
+    visibility:
+      default: true
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: intercept, type: file, generator: caesar }
+    hints:
+      - { level: 1, penalty: 8, content: "Only letters moved by a fixed shift — a Caesar cipher." }
+      - { level: 2, penalty: 15, content: "There are only 25 shifts; try them all and read for words." }
+      - { level: 3, penalty: 25, content: "Frequency: the most common letter is often E. Recover the token." }
+    onComplete:
+      - unlock: keyword
+
+  - id: keyword
+    title: Keyword
+    description: >
+      A longer cipher where the shift itself changes letter by letter, driven by a
+      short repeating keyword. A fragment of known plaintext is attached.
+    points: 150
+    estimatedMinutes: 40
+    requires: [shift]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: cipher, type: file, generator: vigenere }
+    hints:
+      - { level: 1, penalty: 8, content: "This is Vigenere: repeating-key shifting over the alphabet." }
+      - { level: 2, penalty: 15, content: "The crib is real plaintext at the start; subtract it from the cipher to see the key repeat." }
+      - { level: 3, penalty: 25, content: "Recover the keyword, decrypt the rest, read the token." }
+    onComplete:
+      - unlock: token-forge
+
+  - id: token-forge
+    title: Bearer
+    description: >
+      A session token from a service that did not verify its own signatures. Read
+      what it claims about its holder.
+    points: 100
+    estimatedMinutes: 20
+    requires: [keyword]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: token, type: file, generator: jwt }
+    hints:
+      - { level: 1, penalty: 8, content: "It is a JWT: three dot-separated base64url parts." }
+      - { level: 2, penalty: 15, content: "The middle part is the payload — base64url-decode it to JSON." }
+      - { level: 3, penalty: 25, content: "Report the clearance claim value." }
+    onComplete:
+      - unlock: onion
+
+  - id: onion
+    title: Onion
+    description: >
+      A blob wrapped in several reversible layers. No key — just structure. Peel it.
+    points: 100
+    estimatedMinutes: 25
+    requires: [token-forge]
+    completion:
+      type: value
+      grader: text-answer
+    artifacts:
+      - { id: blob, type: file, generator: layers }
+    hints:
+      - { level: 1, penalty: 8, content: "The outer layer is hex. Decode it first." }
+      - { level: 2, penalty: 15, content: "Under the hex is base64 — twice." }
+      - { level: 3, penalty: 25, content: "hex -> base64 -> base64 reveals JSON with the token." }
+    onComplete:
+      - unlock: access
+
+  - id: access
+    title: After Hours
+    description: >
+      An access log for a quiet service. One visitor was not browsing — they were
+      probing. Identify them and what they hunted for.
+    points: 150
+    estimatedMinutes: 35
+    requires: [onion]
+    completion:
+      type: finding
+      grader: log-finding
+    artifacts:
+      - { id: logs, type: log_archive, generator: weblog }
+    hints:
+      - { level: 1, penalty: 8, content: "Most requests are 200s. Look at who is generating 404s." }
+      - { level: 2, penalty: 15, content: "One IP hammers unusual paths (/admin, /.env, backups)." }
+      - { level: 3, penalty: 25, content: "Report the attacker IP and the path they probed most." }
+    onComplete:
+      - unlock: tally-script
+
+  - id: tally-script
+    title: Column Sum
+    description: >
+      A spec and a sample CSV. Write a program that reads any CSV the grader gives
+      it and reports one number. Unseen files will be tested.
+    points: 150
+    estimatedMinutes: 40
+    requires: [access]
+    completion:
+      type: code
+      grader: script-check
+    artifacts:
+      - { id: sample, type: source, generator: csvsum }
+    hints:
+      - { level: 1, penalty: 8, content: "Read the CSV from stdin; the header names the columns." }
+      - { level: 2, penalty: 15, content: "Sum the integer values in the 'amount' column." }
+      - { level: 3, penalty: 25, content: "Print only the integer total, nothing else." }

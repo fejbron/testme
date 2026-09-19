@@ -1,12 +1,24 @@
 import Link from "next/link";
 
 const stats = [
-  { n: "2", l: "Campaigns" },
-  { n: "14", l: "Challenges" },
+  { n: "4", l: "Campaigns" },
+  { n: "26", l: "Challenges" },
   { n: "5", l: "Grader types" },
 ];
 
 const paths = [
+  {
+    kind: "BEGINNER · 6 STAGES",
+    title: "Boot Camp",
+    desc: "Start here. Decode base64, ROT13, hex and binary, sum a column, and grep a secret out of a noisy log. Short, forgiving, and personalized — the moves every later campaign assumes.",
+    tags: ["Base64", "ROT13", "Hex", "Binary", "Search"],
+  },
+  {
+    kind: "INTERMEDIATE · 6 STAGES",
+    title: "Field Work",
+    desc: "Classical ciphers, a forged token, and logs that hide an intruder. Break Caesar and Vigenère, read a JWT, peel a layered blob, catch a scanner in an access log, and write a script the grader tests on unseen input.",
+    tags: ["Caesar", "Vigenère", "JWT", "Forensics", "Scripting"],
+  },
   {
     kind: "ADVANCED · 8 STAGES",
     title: "Project Janus",
@@ -125,10 +137,11 @@ $ ./decoder < frame.bin
         {/* Campaigns */}
         <section style={{ padding: "40px 0 24px" }}>
           <p className="eyebrow">Campaigns</p>
-          <h2 style={{ fontSize: 30, margin: "8px 0 6px" }}>Two tracks, one seed engine</h2>
+          <h2 style={{ fontSize: 30, margin: "8px 0 6px" }}>Four tracks, one seed engine</h2>
           <p style={{ color: "var(--muted)", fontSize: 15, maxWidth: 640, marginBottom: 24 }}>
-            Every student gets different concrete values from the same concepts. Stages unlock as you solve
-            them; graded against what actually happened, not the text you typed.
+            From base64 to buffer overflows. Every student gets different concrete values from the same
+            concepts. Stages unlock as you solve them; graded against what actually happened, not the text
+            you typed.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
             {paths.map((p) => (

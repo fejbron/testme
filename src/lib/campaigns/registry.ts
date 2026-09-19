@@ -4,6 +4,10 @@ import { generators as janusGenerators } from "../../../challenges/janus/generat
 import { deriveGrading as deriveJanus } from "@/lib/grading/janus";
 import { generators as gauntletGenerators } from "../../../challenges/gauntlet/generators";
 import { deriveGrading as deriveGauntlet } from "@/lib/grading/gauntlet";
+import { generators as bootcampGenerators } from "../../../challenges/bootcamp/generators";
+import { deriveGrading as deriveBootcamp } from "@/lib/grading/bootcamp";
+import { generators as fieldworkGenerators } from "../../../challenges/fieldwork/generators";
+import { deriveGrading as deriveFieldwork } from "@/lib/grading/fieldwork";
 
 /** A generator matches the challenges/* GenManifest contract. */
 export type CampaignGenerator = (
@@ -20,6 +24,8 @@ export interface CampaignRuntime {
 const REGISTRY: Record<string, CampaignRuntime> = {
   "project-janus": { generators: janusGenerators, deriveGrading: deriveJanus },
   gauntlet: { generators: gauntletGenerators, deriveGrading: deriveGauntlet },
+  bootcamp: { generators: bootcampGenerators, deriveGrading: deriveBootcamp },
+  fieldwork: { generators: fieldworkGenerators, deriveGrading: deriveFieldwork },
 };
 
 export function registerCampaign(slug: string, runtime: CampaignRuntime): void {
