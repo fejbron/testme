@@ -13,7 +13,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <TopBar userName={user.profile.displayName} roleLabel="Instructor" />
+      <TopBar userName={user.profile.displayName} roleLabel="Instructor" role={user.profile.role} />
       <StudentDetail instanceId={instanceId} />
     </>
   );
