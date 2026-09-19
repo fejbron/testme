@@ -150,7 +150,7 @@ async function main() {
     }
 
     console.log(`imported ${manifest.campaign.slug} v${version} (${manifest.stages.length} stages, hash ${hash.slice(0, 12)})`);
-  });
+  }, { timeout: 60_000, maxWait: 15_000 });
 }
 
 main()
