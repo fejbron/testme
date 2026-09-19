@@ -1,0 +1,382 @@
+apiVersion: cyberrange/v1
+
+campaign:
+  slug: project-janus
+  name: Project Janus
+  description: >
+    An eight-stage investigative campaign that moves from artifact discovery
+    through protocol recovery to environment reconstruction. Every file,
+    value, and target a student sees is derived from their own secure seed,
+    so no two students share the same workstation contents or answers.
+  estimatedHours: 6.5
+  difficulty: advanced
+
+environment:
+  workstation:
+    image: cyberrange/janus-workstation:1
+    services:
+      - name: archive
+        startsLockedUntil: transcriber
+
+stages:
+  - id: first-light
+    title: First Light
+    description: >
+      You've been dropped onto a workstation holding a snapshot of a
+      compromised host's filesystem. A listing and a handful of logs sit
+      under the workstation root. Somewhere in that snapshot one line does
+      not belong with the rest. Separate the routine noise from the single
+      entry that stands apart and report what you found.
+    points: 100
+    estimatedMinutes: 30
+    completion:
+      type: value
+      grader: marker-check
+    visibility:
+      default: true
+    artifacts:
+      - id: workstation-snapshot
+        type: log_archive
+        generator: filesystem
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Open the listing file before the individual logs; it points at
+          where the unusual activity is concentrated.
+      - level: 2
+        penalty: 10
+        content: >
+          One log under the application directory is denser than its
+          neighbors. That density is not an accident.
+      - level: 3
+        penalty: 20
+        content: >
+          Several lines resemble alerts but use a different prefix than the
+          one you are hunting for. Match on exact format, not on vibes.
+      - level: 4
+        penalty: 30
+        content: >
+          The entry you want begins with "MARKER-" followed by eight
+          hexadecimal characters. Everything else nearby is a decoy.
+    evidence:
+      required:
+        - submitted-value
+    onComplete:
+      - unlock: silent-relay
+
+  - id: silent-relay
+    title: Silent Relay
+    description: >
+      A packet capture recovered from the compromised segment records a
+      short conversation between two services using a protocol that isn't
+      in any vendor's documentation. Before the payloads mean anything, you
+      need to identify the general shape of the framing: how does either
+      side know where one message stops and the next one starts?
+    points: 150
+    estimatedMinutes: 45
+    completion:
+      type: finding
+      grader: protocol-class
+    visibility:
+      default: false
+    requires:
+      - first-light
+    artifacts:
+      - id: capture
+        type: pcap
+        generator: pcap
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Load the capture in any packet analysis tool that can dump raw
+          payload bytes, not just interpreted fields.
+      - level: 2
+        penalty: 10
+        content: >
+          Compare payload sizes across records against the first few bytes
+          of each payload. Look for a small integer that keeps agreeing
+          with how much data follows it.
+      - level: 3
+        penalty: 20
+        content: >
+          There is no fixed-size struct here and no delimiter byte repeated
+          between messages. The receiver has to be told how much to read.
+      - level: 4
+        penalty: 30
+        content: >
+          Classify this as framing where each message is preceded by a
+          field that encodes the length of what follows.
+    onComplete:
+      - unlock: framing
+
+  - id: framing
+    title: Framing
+    description: >
+      Naming the framing style was the easy part. Now pin down the exact
+      layout: which bytes hold the length field and how wide and
+      byte-ordered it is, where the message-type and sequence bytes sit
+      inside each frame, and what kind of checksum protects the rest.
+    points: 150
+    estimatedMinutes: 45
+    completion:
+      type: finding
+      grader: frame-fields
+    visibility:
+      default: false
+    requires:
+      - silent-relay
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          The length field sits at the very front of every frame, before
+          anything else. Confirm its width by checking whether a two-byte
+          or four-byte read gives a sane, consistent value across records.
+      - level: 2
+        penalty: 10
+        content: >
+          Try interpreting the length field both ways round. Only one byte
+          order produces a value that matches the actual remaining payload
+          size on every record.
+      - level: 3
+        penalty: 20
+        content: >
+          The message-type byte lives near the front of the frame body, and
+          the two-byte sequence number sits a few bytes further in;
+          sequence numbers should increase steadily from record to record
+          once you have the right offset.
+      - level: 4
+        penalty: 30
+        content: >
+          The checksum occupies the last bytes of the frame and is computed
+          over everything before it. Try simple accumulator checksums
+          (XOR or additive) before assuming anything cryptographic.
+    onComplete:
+      - unlock: transcriber
+
+  - id: transcriber
+    title: Transcriber
+    description: >
+      With the frame layout in hand, build a decoder that turns raw frames
+      into structured messages. Your decoder will be run against packets it
+      has never seen, generated from the same seeded protocol, so it needs
+      to implement the layout rather than memorize the sample capture.
+    points: 200
+    estimatedMinutes: 60
+    completion:
+      type: code
+      grader: decoder
+    visibility:
+      default: false
+    requires:
+      - framing
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Read the length field first and use it to know exactly how many
+          bytes to consume for the rest of the frame, rather than assuming
+          a fixed frame size.
+      - level: 2
+        penalty: 10
+        content: >
+          Validate the checksum before trusting message-type or sequence
+          fields; a decoder that silently accepts corrupt frames will fail
+          hidden tests built around rejection.
+      - level: 3
+        penalty: 20
+        content: >
+          Your decoder should handle a stream containing more than one
+          frame back to back, not just a single isolated frame.
+      - level: 4
+        penalty: 30
+        content: >
+          Keep the offsets and widths as named constants matching what you
+          found in the framing stage; hardcoding a single sample frame's
+          byte positions without generalizing them is a common failure mode.
+    evidence:
+      required:
+        - source-diff
+    onComplete:
+      - unlock: the-archive
+      - startService: archive
+      - emit: relay.protocol.recovered
+
+  - id: the-archive
+    title: The Archive
+    description: >
+      A small repository recovered from the environment holds the service's
+      change history. Its current state looks clean, but current state is
+      not the whole story. Something sensitive passed through this history
+      and was later pulled back out, yet history remembers what the working
+      tree does not.
+    points: 150
+    estimatedMinutes: 45
+    completion:
+      type: value
+      grader: archive-fragment
+    visibility:
+      default: false
+    requires:
+      - transcriber
+    artifacts:
+      - id: repo
+        type: git_repository
+        generator: gitrepo
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Do not stop at the latest snapshot of the files; walk the full
+          commit history in order.
+      - level: 2
+        penalty: 10
+        content: >
+          One commit message explicitly undoes an earlier one. Read what
+          the earlier commit actually introduced before it was undone.
+      - level: 3
+        penalty: 20
+        content: >
+          Diff the reverting commit against its parent, not against the
+          repository's initial state, to see exactly what content
+          disappeared.
+      - level: 4
+        penalty: 30
+        content: >
+          The value you want was only ever present in one commit's
+          contents, never in HEAD. Look at what that single commit added
+          to the configuration file.
+    onComplete:
+      - unlock: out-of-order
+
+  - id: out-of-order
+    title: Out of Order
+    description: >
+      A small C service recovered from the workstation crashes under
+      certain inputs. A regression harness describes the expected behavior.
+      Reproduce the failure, work out why the service writes past where it
+      should, and patch the source so the regression passes cleanly.
+    points: 200
+    estimatedMinutes: 60
+    completion:
+      type: code
+      grader: patch-regression
+    visibility:
+      default: false
+    requires:
+      - the-archive
+    artifacts:
+      - id: service
+        type: source
+        generator: cservice
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Build and run the regression harness first so you can see the
+          failure directly, rather than reading the source cold.
+      - level: 2
+        penalty: 10
+        content: >
+          Pay close attention to the loop bound and the index used inside
+          the loop body that copies data into the fixed-size buffer.
+      - level: 3
+        penalty: 20
+        content: >
+          Compare the loop's stopping condition against the number of
+          elements the buffer was actually declared to hold.
+      - level: 4
+        penalty: 30
+        content: >
+          The copy writes one element more, or one index further, than the
+          buffer's declared size allows. Fix the bound or the index, not
+          the buffer size.
+    evidence:
+      required:
+        - source-diff
+    onComplete:
+      - unlock: residual-state
+
+  - id: residual-state
+    title: Residual State
+    description: >
+      A recovered value from the previous stage turns out to be reusable
+      elsewhere in the environment. Applied correctly against a leftover
+      configuration artifact, it opens the artifact without any brute
+      force. The flaw is in how that value was reused, not in its strength.
+    points: 150
+    estimatedMinutes: 45
+    completion:
+      type: value
+      grader: config-open
+    visibility:
+      default: false
+    requires:
+      - out-of-order
+    artifacts:
+      - id: config
+        type: configuration
+        generator: config
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Two configuration artifacts share a header field that is
+          supposed to be unique per encryption. Check whether it actually
+          is.
+      - level: 2
+        penalty: 10
+        content: >
+          One of the two artifacts is shipped alongside a known, public
+          version of its own contents. That pairing is the way in.
+      - level: 3
+        penalty: 20
+        content: >
+          If the same keystream protected two different pieces of content,
+          combining the known content with its own protected form recovers
+          the keystream directly, no key needed.
+      - level: 4
+        penalty: 30
+        content: >
+          Recover the keystream from the reference artifact and its known
+          plaintext, then apply it to the target artifact to read its
+          contents in the clear.
+    onComplete:
+      - unlock: reconstruction
+
+  - id: reconstruction
+    title: Reconstruction
+    description: >
+      Everything recovered so far is a fragment of one system. Bring the
+      fragments together to repair a small clustered service so that its
+      replicas agree with one another again. Success is measured by the
+      state of the running environment, not by a single submitted value.
+    points: 200
+    estimatedMinutes: 60
+    completion:
+      type: environment_state
+      grader: cluster-health
+    visibility:
+      default: false
+    requires:
+      - residual-state
+    hints:
+      - level: 1
+        penalty: 5
+        content: >
+          Check each replica's reported state independently before
+          assuming they are already consistent with each other.
+      - level: 2
+        penalty: 10
+        content: >
+          The values you recovered in earlier stages are inputs here, not
+          leftover trivia; each one configures or unblocks part of this
+          service.
+      - level: 3
+        penalty: 20
+        content: >
+          Bring replicas up one at a time and confirm each converges before
+          moving to the next; starting all of them at once will mask which
+          one is misconfigured.
