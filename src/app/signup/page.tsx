@@ -10,7 +10,7 @@ export default async function SignupPage() {
   if (user) redirect(user.profile.role === "STUDENT" ? "/dashboard" : "/instructor");
   return (
     <main style={{ maxWidth: 380, margin: "0 auto", padding: "80px 24px" }}>
-      <p style={{ color: "var(--accent)", letterSpacing: 4, fontSize: 12 }}>TESTME</p>
+      <p className="eyebrow" style={{ letterSpacing: "0.18em" }}>▚ TESTME</p>
       <h1 style={{ fontSize: 26, margin: "10px 0 24px" }}>Create account</h1>
       <SignupForm />
       <p style={{ marginTop: 18, fontSize: 13, color: "var(--muted)" }}>

@@ -1,6 +1,117 @@
 @import "tailwindcss";
 
-:root { --bg: #0a0e14; --panel: #111722; --border: #1e2937; --fg: #d7e0ea; --muted: #7d8ba0; --accent: #39d3bb; --danger: #ff6b6b; }
-html, body { background: var(--bg); color: var(--fg); }
-body { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
-a { color: var(--accent); }
+:root {
+  /* NetLab-style monochrome palette (labs.bronsoft.com) */
+  --bg: #000000;
+  --panel: #0c0c0d;
+  --panel-2: #0a0a0b;
+  --border: #262626;
+  --border-soft: #1a1a1a;
+  --fg: #c8c8c8;
+  --fg-strong: #ffffff;
+  --muted: #7d7d7d;
+  --accent: #ffffff;
+  --accent-fg: #000000;
+  --danger: #ff6b6b;
+  --ok: #4ade80;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-mono);
+  color: var(--fg-strong);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+code,
+kbd,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: var(--fg-strong);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.btn-primary:hover {
+  opacity: 0.88;
+  text-decoration: none;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--fg);
+  border-color: #404040;
+}
+.btn-secondary:hover {
+  border-color: #666;
+  text-decoration: none;
+}
+
+/* Cards / panels — sharp corners, thin borders */
+.card {
+  background: color-mix(in oklab, var(--panel) 70%, transparent);
+  border: 1px solid var(--border);
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: #fff;
+  color: #000;
+}
