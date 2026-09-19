@@ -38,7 +38,7 @@ export default function Terminal({ instanceId, envStatus }: { instanceId: string
 
       let cwd = "/vercel/sandbox";
       let line = "";
-      term.writeln("Cyber Range terminal. Type a command and press Enter.");
+      term.writeln("TestMe terminal. Type a command and press Enter.");
       term.write(`\r\n${cwd} ${PROMPT}`);
 
       async function runCommand(cmd: string) {

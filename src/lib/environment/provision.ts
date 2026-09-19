@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { loadSeedContext } from "@/lib/seed/context";
-import { generators } from "../../../challenges/janus/generators";
+import { campaignRuntime } from "@/lib/campaigns/registry";
 import { uploadArtifact, ensureBucket, safeObjectKey } from "@/lib/storage";
 import { createSandboxProvider } from "@/lib/sandbox/provider";
 import type { SeededFile } from "@/lib/sandbox/types";
@@ -21,9 +21,10 @@ interface GeneratedArtifact {
 async function generateAll(campaignInstanceId: string): Promise<{ artifacts: GeneratedArtifact[]; workstationFiles: SeededFile[] }> {
   const instance = await prisma.campaignInstance.findUniqueOrThrow({
     where: { id: campaignInstanceId },
-    include: { campaignVersion: { include: { artifacts: true } } },
+    include: { campaignVersion: { include: { artifacts: true, campaign: true } } },
   });
   const ctx = await loadSeedContext(campaignInstanceId);
+  const { generators } = campaignRuntime(instance.campaignVersion.campaign.slug);
 
   const artifacts: GeneratedArtifact[] = [];
   const workstationFiles: SeededFile[] = [];

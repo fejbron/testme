@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <main style={{ maxWidth: 820, margin: "0 auto", padding: "72px 24px" }}>
-      <p style={{ color: "var(--accent)", letterSpacing: 4, fontSize: 12 }}>CYBER RANGE</p>
+      <p style={{ color: "var(--accent)", letterSpacing: 4, fontSize: 12 }}>TESTME</p>
       <h1 style={{ fontSize: 40, lineHeight: 1.1, margin: "12px 0 20px" }}>
         Investigate systems. Prove conclusions.
       </h1>

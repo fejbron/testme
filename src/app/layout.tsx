@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cyber Range",
+  title: "TestMe",
   description: "Executable investigation environments for cybersecurity training.",
 };
 

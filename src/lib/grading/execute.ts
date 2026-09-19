@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { loadSeedContext } from "@/lib/seed/context";
-import { deriveGrading } from "./janus";
+import { campaignRuntime } from "@/lib/campaigns/registry";
 import { gradeValue } from "@/lib/graders/value";
 import { gradeFinding } from "@/lib/graders/finding";
 import { gradeCode } from "@/lib/graders/code";
@@ -16,21 +16,32 @@ import { log } from "@/lib/observability/logger";
 export async function executeGrading(submissionId: string): Promise<void> {
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
-    include: { code: true, challengeInstance: { include: { stage: true, campaignInstance: true } } },
+    include: {
+      code: true,
+      challengeInstance: { include: { stage: true, campaignInstance: { include: { campaignVersion: { include: { campaign: true } } } } } },
+    },
   });
   if (!submission) return;
-  if (submission.status === "PASSED") return; // idempotent
 
   const ci = submission.challengeInstance;
   const stage = ci.stage;
   const campaignInstanceId = ci.campaignInstanceId;
+
+  // Recovery path: a prior run graded PASSED but may have failed before completing
+  // the stage (e.g. a transaction timeout). Re-drive the idempotent award/unlock.
+  if (submission.status === "PASSED") {
+    await awardStageCompletion(campaignInstanceId, ci.id);
+    await emitEvent({ campaignInstanceId, type: EventType.SUBMISSION_PASSED, payload: { submissionId }, idempotencyKey: `passed:${submissionId}` });
+    return;
+  }
+  const campaignSlug = ci.campaignInstance.campaignVersion.campaign.slug;
 
   await prisma.submission.update({ where: { id: submissionId }, data: { status: "GRADING" } });
 
   let feedback: GraderFeedback;
   try {
     const seedCtx = await loadSeedContext(campaignInstanceId);
-    const plan = deriveGrading(stage.slug, seedCtx);
+    const plan = campaignRuntime(campaignSlug).deriveGrading(stage.slug, seedCtx);
     const payload = (submission.payloadJson ?? {}) as Record<string, unknown>;
 
     if (plan.kind === "value") {

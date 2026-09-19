@@ -21,7 +21,7 @@ export default function TopBar({
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-        <span style={{ color: "var(--accent)", letterSpacing: 3, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>CYBER RANGE</span>
+        <span style={{ color: "var(--accent)", letterSpacing: 3, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>TESTME</span>
         {roleLabel && <span style={{ color: "var(--muted)", fontSize: 11, textTransform: "uppercase", whiteSpace: "nowrap" }}>{roleLabel}</span>}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

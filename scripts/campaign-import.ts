@@ -13,6 +13,7 @@ import type { Manifest, StageManifest } from "../src/lib/campaign/schema";
 const prisma = new PrismaClient();
 
 const KNOWN_GRADERS = [
+  // janus
   "marker-check",
   "protocol-class",
   "frame-fields",
@@ -21,8 +22,29 @@ const KNOWN_GRADERS = [
   "patch-regression",
   "config-open",
   "cluster-health",
+  // gauntlet
+  "cipher-open",
+  "vault-open",
+  "stego-find",
+  "ledger-walk",
+  "vm-interp",
+  "log-forensics",
 ];
-const KNOWN_GENERATORS = ["filesystem", "pcap", "gitrepo", "cservice", "config"];
+const KNOWN_GENERATORS = [
+  // janus
+  "filesystem",
+  "pcap",
+  "gitrepo",
+  "cservice",
+  "config",
+  // gauntlet
+  "cipherchain",
+  "vault",
+  "stego",
+  "ledger",
+  "stackvm",
+  "injection",
+];
 
 const COMPLETION_MAP: Record<string, CompletionType> = {
   value: "VALUE",

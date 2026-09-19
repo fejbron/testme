@@ -1,8 +1,7 @@
 import type { SeedContext } from "@/lib/seed";
 import { generators } from "../../../challenges/janus/generators";
-import type { FindingSpec } from "@/lib/graders/finding";
 import type { CodeSpec } from "@/lib/graders/code";
-import type { EnvCheck } from "@/lib/graders/environment-state";
+import type { GradingPlan } from "./plan";
 
 const b64 = (s: string): string => Buffer.from(s, "utf8").toString("base64");
 
@@ -12,12 +11,6 @@ function expectedOf(name: string, ctx: SeedContext): Record<string, string> {
   if (!gen) throw new Error(`unknown generator ${name}`);
   return gen(ctx, { file: () => {} }).expected;
 }
-
-export type GradingPlan =
-  | { kind: "value"; expected: string }
-  | { kind: "finding"; spec: FindingSpec }
-  | { kind: "code"; language: "python" | "c"; spec: CodeSpec }
-  | { kind: "environment_state"; checks: EnvCheck[] };
 
 // --- transcriber hidden-vector construction (mirrors the pcap frame layout) ---
 const PCAP_BODY_SIZE = 16;

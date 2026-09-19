@@ -1,0 +1,135 @@
+apiVersion: cyberrange/v1
+
+campaign:
+  slug: gauntlet
+  name: The Gauntlet
+  description: >
+    Six escalating investigations with no scaffolding. You are handed raw
+    artifacts and must decide what they are before you can crack them. Every
+    value is personalized; there are no shared answers.
+  estimatedHours: 16
+  difficulty: expert
+
+environment:
+  workstation:
+    image: vercel/sandbox/universal
+
+stages:
+  - id: cipher-drift
+    title: Cipher Drift
+    description: >
+      A single blob of text, wrapped in several reversible transformations. No
+      key is involved — only structure. Peel it back to the plaintext it hides.
+    points: 150
+    estimatedMinutes: 45
+    visibility:
+      default: true
+    completion:
+      type: value
+      grader: cipher-open
+    artifacts:
+      - { id: blob, type: configuration, generator: cipherchain }
+    hints:
+      - { level: 1, penalty: 10, content: "The outermost layer is not encryption. Count the character set." }
+      - { level: 2, penalty: 20, content: "Hex, then base64. What remains is plain letters, shifted." }
+      - { level: 3, penalty: 40, content: "Only ASCII letters move; try every rotation and read for a marker." }
+    onComplete:
+      - unlock: vault-run
+
+  - id: vault-run
+    title: Vault Run
+    description: >
+      An opaque binary and a fragment of the text it began as. The same short
+      secret was used across the whole message. Recover what it protects.
+    points: 200
+    estimatedMinutes: 60
+    requires: [cipher-drift]
+    completion:
+      type: value
+      grader: vault-open
+    artifacts:
+      - { id: vault, type: configuration, generator: vault }
+    hints:
+      - { level: 1, penalty: 15, content: "The crib is real plaintext at a known position. XOR aligns things." }
+      - { level: 2, penalty: 30, content: "Crib XOR ciphertext at that offset reveals repeating key bytes." }
+      - { level: 3, penalty: 50, content: "Find the key length, extend the key, decrypt the whole buffer." }
+    onComplete:
+      - unlock: hidden-pixels
+
+  - id: hidden-pixels
+    title: Hidden Pixels
+    description: >
+      An image that looks like noise. Something was written into it a bit at a
+      time. Report where it starts and what it says.
+    points: 200
+    estimatedMinutes: 50
+    requires: [vault-run]
+    completion:
+      type: finding
+      grader: stego-find
+    artifacts:
+      - { id: image, type: file, generator: stego }
+    hints:
+      - { level: 1, penalty: 15, content: "It is a P6 PPM. The header ends after the maxval line." }
+      - { level: 2, penalty: 30, content: "One bit per byte, eight bytes per character, ASCII." }
+      - { level: 3, penalty: 50, content: "Sweep the start offset; decoded printable ASCII marks the beginning." }
+    onComplete:
+      - unlock: the-ledger
+
+  - id: the-ledger
+    title: The Ledger
+    description: >
+      A chain of records that each commit to the one before. One record carries
+      a token — but not the last, and not one you can trust without verifying.
+    points: 200
+    estimatedMinutes: 45
+    requires: [hidden-pixels]
+    completion:
+      type: value
+      grader: ledger-walk
+    artifacts:
+      - { id: chain, type: configuration, generator: ledger }
+    hints:
+      - { level: 1, penalty: 15, content: "Recompute each hash from index, prevHash and data; find the break." }
+      - { level: 2, penalty: 30, content: "The valid sub-chain is the one whose hashes all verify." }
+      - { level: 3, penalty: 50, content: "The token lives in a verified block; ignore the tampered branch." }
+    onComplete:
+      - unlock: machine-code
+
+  - id: machine-code
+    title: Machine Code
+    description: >
+      A tiny stack machine, its instruction set, and one worked example. Build
+      an interpreter that runs any program the machine accepts.
+    points: 300
+    estimatedMinutes: 90
+    requires: [the-ledger]
+    completion:
+      type: code
+      grader: vm-interp
+    artifacts:
+      - { id: vmspec, type: source, generator: stackvm }
+    hints:
+      - { level: 1, penalty: 20, content: "Read the ISA exactly: one instruction per line, PRINT emits the top." }
+      - { level: 2, penalty: 40, content: "A list is your stack; SWAP and DUP are the tricky two." }
+      - { level: 3, penalty: 60, content: "Read the program on stdin, print each PRINT result on its own line." }
+    onComplete:
+      - unlock: trace
+
+  - id: trace
+    title: Trace
+    description: >
+      An access log from a service that trusted its inputs. One request was not
+      what it claimed. Identify the attack and what it took.
+    points: 250
+    estimatedMinutes: 45
+    requires: [machine-code]
+    completion:
+      type: finding
+      grader: log-forensics
+    artifacts:
+      - { id: logs, type: log_archive, generator: injection }
+    hints:
+      - { level: 1, penalty: 15, content: "Most requests are boring. One query has an extra clause." }
+      - { level: 2, penalty: 30, content: "Tautology injection in a WHERE clause; the response leaks a value." }
+      - { level: 3, penalty: 50, content: "Report the injected id string and the leaked secret it returned." }

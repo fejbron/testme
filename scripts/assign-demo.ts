@@ -7,8 +7,7 @@ async function main() {
   const instructor = await prisma.profile.findUniqueOrThrow({ where: { email: "instructor@range.local" } });
   const students = await prisma.profile.findMany({ where: { email: { in: ["student1@range.local", "student2@range.local"] } } });
 
-  const campaign = await prisma.campaign.findFirstOrThrow({ where: { slug: { in: ["janus", "project-janus"] } }, include: { versions: { orderBy: { version: "desc" }, take: 1 } } });
-  const version = campaign.versions[0];
+  const campaigns = await prisma.campaign.findMany({ where: { status: "PUBLISHED" }, include: { versions: { orderBy: { version: "desc" }, take: 1 } } });
 
   const course = await prisma.course.upsert({
     where: { id: "demo-course" },
@@ -27,19 +26,23 @@ async function main() {
       create: { cohortId: cohort.id, studentId: s.id },
     });
   }
-  await prisma.assignment.upsert({
-    where: { campaignVersionId_cohortId: { campaignVersionId: version.id, cohortId: cohort.id } },
-    update: {},
-    create: { campaignVersionId: version.id, cohortId: cohort.id },
-  });
-  for (const s of students) {
-    await prisma.campaignInstance.upsert({
-      where: { campaignVersionId_studentId: { campaignVersionId: version.id, studentId: s.id } },
+  for (const campaign of campaigns) {
+    const version = campaign.versions[0];
+    if (!version) continue;
+    await prisma.assignment.upsert({
+      where: { campaignVersionId_cohortId: { campaignVersionId: version.id, cohortId: cohort.id } },
       update: {},
-      create: { campaignVersionId: version.id, studentId: s.id, status: "PENDING" },
+      create: { campaignVersionId: version.id, cohortId: cohort.id },
     });
+    for (const s of students) {
+      await prisma.campaignInstance.upsert({
+        where: { campaignVersionId_studentId: { campaignVersionId: version.id, studentId: s.id } },
+        update: {},
+        create: { campaignVersionId: version.id, studentId: s.id, status: "PENDING" },
+      });
+    }
+    console.log(`assigned ${campaign.slug} v${version.version} to ${students.length} students`);
   }
-  console.log(`assigned ${campaign.slug} v${version.version} to ${students.length} students in cohort ${cohort.name}`);
 }
 
 main()
