@@ -1,9 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  Books,
+  CaretRight,
+  Check,
+  Flag,
+  MagnifyingGlass,
+  Plus,
+  SpinnerGap,
+  Trash,
+  UserCircle,
+  UsersThree,
+  X,
+} from "@phosphor-icons/react";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
 import StatusPill from "@/components/StatusPill";
+import { filterAdminUsers, getInitials } from "./admin-ui";
+import styles from "./admin.module.css";
 
 type Role = "STUDENT" | "INSTRUCTOR" | "AUTHOR" | "ADMIN";
 const ROLES: Role[] = ["STUDENT", "INSTRUCTOR", "AUTHOR", "ADMIN"];
@@ -53,6 +69,12 @@ type Campaign = {
 type Package = { slug: string };
 
 type Tab = "users" | "cohorts" | "campaigns";
+
+const TAB_COPY: Record<Tab, { title: string; description: string }> = {
+  users: { title: "Users", description: "Manage your team, set roles, and review access." },
+  cohorts: { title: "Cohorts", description: "Organize students into courses and custom groups." },
+  campaigns: { title: "Campaigns", description: "Publish challenge packages and assign releases." },
+};
 
 async function apiRequest<T>(url: string, method: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -169,67 +191,282 @@ export default function AdminConsole({
     }
   }
 
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginBottom: 20,
-          borderBottom: "1px solid var(--border)",
-          flexWrap: "wrap",
-        }}
-      >
-        {(["users", "cohorts", "campaigns"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 13,
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              padding: "10px 14px",
-              background: "transparent",
-              border: "none",
-              borderBottom: tab === t ? "2px solid var(--fg-strong)" : "2px solid transparent",
-              color: tab === t ? "var(--fg-strong)" : "var(--muted)",
-              cursor: "pointer",
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+  const navItems = [
+    { id: "users" as const, label: "Users", icon: UsersThree },
+    { id: "cohorts" as const, label: "Cohorts", icon: Books },
+    { id: "campaigns" as const, label: "Campaigns", icon: Flag },
+  ];
 
-      {tab === "users" && (
-        <UsersTab
-          selfId={selfId}
-          users={users}
-          loading={usersLoading}
-          error={usersError}
-          reload={loadUsers}
-        />
-      )}
-      {tab === "cohorts" && (
-        <CohortsTab
-          courses={courses}
-          users={users}
-          loading={cohortsLoading}
-          error={cohortsError}
-          reload={loadCohorts}
-        />
-      )}
-      {tab === "campaigns" && (
-        <CampaignsTab
-          campaigns={campaigns}
-          packages={packages}
-          courses={courses}
-          loading={campaignsLoading}
-          error={campaignsError}
-          reload={loadCampaigns}
-        />
-      )}
+  return (
+    <div className={styles.shell}>
+      <aside className={styles.rail} aria-label="Admin sections">
+        <div className={styles.railLabel}>Admin</div>
+        <nav className={styles.nav}>
+          {navItems.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              className={tab === id ? styles.navActive : styles.navItem}
+              onClick={() => setTab(id)}
+              aria-current={tab === id ? "page" : undefined}
+            >
+              {tab === id && <motion.span layoutId="admin-nav-indicator" className={styles.navIndicator} />}
+              <Icon size={20} weight={tab === id ? "fill" : "regular"} aria-hidden="true" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className={styles.railMeta}>
+          <span className={styles.statusDot} />
+          System online
+        </div>
+      </aside>
+
+      <section className={styles.workspace}>
+        <header className={styles.workspaceHeader}>
+          <div>
+            <div className={styles.breadcrumb}>ADMIN / {tab.toUpperCase()}</div>
+            <h1>{TAB_COPY[tab].title}</h1>
+            <p>{TAB_COPY[tab].description}</p>
+          </div>
+        </header>
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className={styles.tabPanel}
+          >
+            {tab === "users" && (
+              <UsersWorkspace
+                selfId={selfId}
+                users={users}
+                courses={courses}
+                loading={usersLoading}
+                error={usersError}
+                reload={loadUsers}
+              />
+            )}
+            {tab === "cohorts" && (
+              <div className={styles.legacyContent}>
+                <CohortsTab
+                  courses={courses}
+                  users={users}
+                  loading={cohortsLoading}
+                  error={cohortsError}
+                  reload={loadCohorts}
+                />
+              </div>
+            )}
+            {tab === "campaigns" && (
+              <div className={styles.legacyContent}>
+                <CampaignsTab
+                  campaigns={campaigns}
+                  packages={packages}
+                  courses={courses}
+                  loading={campaignsLoading}
+                  error={campaignsError}
+                  reload={loadCampaigns}
+                />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </section>
+    </div>
+  );
+}
+
+function UsersWorkspace({
+  selfId,
+  users,
+  courses,
+  loading,
+  error,
+  reload,
+}: {
+  selfId: string;
+  users: AdminUser[] | null;
+  courses: Course[] | null;
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
+}) {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(users?.[0]?.id ?? "");
+  const [showCreate, setShowCreate] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<Role>("STUDENT");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [busyRowId, setBusyRowId] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
+
+  const visibleUsers = useMemo(() => filterAdminUsers(users ?? [], query), [users, query]);
+  const selectedUser = (users ?? []).find((user) => user.id === selectedId) ?? visibleUsers[0] ?? null;
+  const memberships = useMemo(
+    () => (courses ?? []).flatMap((course) =>
+      course.cohorts
+        .filter((cohort) => cohort.members.some((member) => member.id === selectedUser?.id))
+        .map((cohort) => `${course.name} / ${cohort.name}`)
+    ),
+    [courses, selectedUser?.id]
+  );
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setCreateError(null);
+    try {
+      await apiRequest("/api/admin/users", "POST", { email, password, displayName, role });
+      const createdName = displayName;
+      setEmail("");
+      setDisplayName("");
+      setPassword("");
+      setRole("STUDENT");
+      await reload();
+      setShowCreate(false);
+      setNotice(`${createdName} was created.`);
+    } catch (caught) {
+      setCreateError(caught instanceof Error ? caught.message : "Failed to create user.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleRoleChange(user: AdminUser, newRole: Role) {
+    if (newRole === user.role) return;
+    if ((newRole === "ADMIN" || user.role === "ADMIN") && !window.confirm(`Change ${user.email}'s role from ${user.role} to ${newRole}?`)) return;
+    setBusyRowId(user.id);
+    setRowError(null);
+    try {
+      await apiRequest(`/api/admin/users/${user.id}`, "PATCH", { role: newRole });
+      await reload();
+      setNotice(`${user.displayName}'s role was updated.`);
+    } catch (caught) {
+      setRowError(caught instanceof Error ? caught.message : "Failed to update role.");
+    } finally {
+      setBusyRowId(null);
+    }
+  }
+
+  async function handleDelete(user: AdminUser) {
+    if (user.id === selfId || !window.confirm(`Delete user ${user.email}? This cannot be undone.`)) return;
+    setBusyRowId(user.id);
+    setRowError(null);
+    try {
+      await apiRequest(`/api/admin/users/${user.id}`, "DELETE");
+      await reload();
+      setSelectedId("");
+      setNotice(`${user.displayName} was deleted.`);
+    } catch (caught) {
+      setRowError(caught instanceof Error ? caught.message : "Failed to delete user.");
+    } finally {
+      setBusyRowId(null);
+    }
+  }
+
+  return (
+    <div className={styles.userLayout}>
+      <section className={styles.directory}>
+        <div className={styles.directoryToolbar}>
+          <label className={styles.searchBox}>
+            <MagnifyingGlass size={18} aria-hidden="true" />
+            <span className={styles.srOnly}>Search users</span>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search users by name, email, or role…" />
+          </label>
+          <motion.button type="button" className={styles.primaryButton} whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCreate((current) => !current)}>
+            {showCreate ? <X size={17} /> : <Plus size={17} weight="bold" />}{showCreate ? "Close" : "Create user"}
+          </motion.button>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {showCreate && (
+            <motion.form className={styles.createForm} onSubmit={handleCreate} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}>
+              <label>Display name<input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></label>
+              <label>Email<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+              <label>Password<input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+              <label>Role<select value={role} onChange={(e) => setRole(e.target.value as Role)}>{ROLES.map((item) => <option key={item}>{item}</option>)}</select></label>
+              <button type="submit" disabled={creating}>{creating ? <SpinnerGap className="icon-spin" size={17} /> : <Plus size={17} />}Create</button>
+              {createError && <p className={styles.inlineError}>{createError}</p>}
+            </motion.form>
+          )}
+        </AnimatePresence>
+
+        {(error || rowError) && <div className={styles.errorBanner}>{error || rowError}</div>}
+        <div className={styles.tableFrame}>
+          <div className={styles.tableHeader}><span>Name</span><span>Email</span><span>Role</span><span>Created</span><span /></div>
+          <div className={styles.userRows}>
+            {visibleUsers.map((user) => {
+              const active = selectedUser?.id === user.id;
+              return (
+                <motion.button layout type="button" key={user.id} className={active ? styles.userRowActive : styles.userRow} onClick={() => setSelectedId(user.id)} whileHover={{ x: 2 }}>
+                  <span className={styles.userIdentity}><span className={styles.avatarSmall}>{getInitials(user.displayName)}</span><strong>{user.displayName}</strong></span>
+                  <span className={styles.userEmail}>{user.email}</span>
+                  <span className={styles.roleBadge}>{user.role.toLocaleLowerCase()}</span>
+                  <span className={styles.createdAt}>{new Date(user.createdAt).toLocaleDateString()}</span>
+                  <CaretRight size={16} aria-hidden="true" />
+                </motion.button>
+              );
+            })}
+            {!loading && visibleUsers.length === 0 && <div className={styles.emptyState}>No users match your search.</div>}
+            {loading && <div className={styles.loadingState}><SpinnerGap className="icon-spin" size={18} />Refreshing directory…</div>}
+          </div>
+        </div>
+        <div className={styles.tableFooter}>{visibleUsers.length} of {(users ?? []).length} users</div>
+      </section>
+
+      <AnimatePresence mode="wait">
+        {selectedUser ? (
+          <motion.aside key={selectedUser.id} className={styles.inspector} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 18 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+            <div className={styles.inspectorProfile}>
+              <div className={styles.avatarLarge}>{getInitials(selectedUser.displayName)}</div>
+              <div><h2>{selectedUser.displayName}</h2><p>{selectedUser.email}</p></div>
+              <span className={styles.activeStatus}><span />Active</span>
+            </div>
+            <div className={styles.inspectorSection}>
+              <div className={styles.sectionTitle}><span>User details</span><UserCircle size={18} /></div>
+              <dl className={styles.detailList}>
+                <div><dt>Full name</dt><dd>{selectedUser.displayName}</dd></div>
+                <div><dt>Email</dt><dd>{selectedUser.email}</dd></div>
+                <div><dt>Joined</dt><dd>{new Date(selectedUser.createdAt).toLocaleDateString()}</dd></div>
+              </dl>
+            </div>
+            <div className={styles.inspectorSection}>
+              <div className={styles.sectionTitle}><span>Role</span></div>
+              <p className={styles.sectionHelp}>Controls what this user can access.</p>
+              <select className={styles.inspectorSelect} value={selectedUser.role} disabled={busyRowId === selectedUser.id} onChange={(event) => handleRoleChange(selectedUser, event.target.value as Role)}>
+                {ROLES.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className={styles.inspectorSection}>
+              <div className={styles.sectionTitle}><span>Cohort memberships</span><span className={styles.count}>{memberships.length}</span></div>
+              <div className={styles.memberships}>{memberships.map((membership) => <span key={membership}>{membership}</span>)}{memberships.length === 0 && <p>Not assigned to a custom cohort.</p>}</div>
+            </div>
+            <div className={styles.dangerZone}>
+              <div><Trash size={19} /><strong>Delete user</strong></div>
+              <p>This permanently removes the account and its access. This action cannot be undone.</p>
+              <motion.button type="button" whileTap={{ scale: 0.97 }} disabled={selectedUser.id === selfId || busyRowId === selectedUser.id} onClick={() => handleDelete(selectedUser)}>
+                {busyRowId === selectedUser.id ? <SpinnerGap className="icon-spin" size={16} /> : <Trash size={16} />}{selectedUser.id === selfId ? "Current account" : "Delete user"}
+              </motion.button>
+            </div>
+          </motion.aside>
+        ) : <aside className={styles.inspectorEmpty}>Select a user to inspect their access.</aside>}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {notice && (
+          <motion.button type="button" className={styles.toast} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 18 }} onClick={() => setNotice(null)}>
+            <Check size={18} weight="bold" /><span>{notice}</span><X size={15} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

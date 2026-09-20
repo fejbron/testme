@@ -1,41 +1,52 @@
-# Stage Workspace Design QA
+# Admin dashboard design QA
 
-## Evidence
+- Source visual truth: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-3e96dcca-8cd4-49a2-b314-e5f39b67e08f.png`
+- Desktop implementation: `docs/design-qa/admin-workspace-desktop.png`
+- Mobile implementation: `docs/design-qa/admin-workspace-mobile.png`
+- Desktop viewport: 1440 × 1024 CSS px, device scale factor 1
+- Mobile viewport: 390 × 844 CSS px, device scale factor 1, full-page capture
+- Source dimensions: 1440 × 1024 px
+- Desktop implementation dimensions: 1440 × 1024 px
+- State: Users section, first user selected, create form closed
 
-- Source visual truth: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-5bab9964-fa99-4653-b056-794878c1fd90.png`
-- Implementation screenshot: `docs/design-qa/stage-workspace-desktop.png`
-- Responsive screenshot: `docs/design-qa/stage-workspace-mobile.png`
-- Combined comparison: `docs/design-qa/stage-workspace-comparison.png`
-- Source pixels: 1487 × 1058.
-- Implementation pixels and CSS viewport: 1487 × 1058 at device scale factor 1.
-- State: Boot Camp, stage 3 active, terminal selected, environment running.
+## Full-view comparison evidence
 
-## Findings
+The desktop implementation preserves the source hierarchy: narrow vertical section rail, large directory workspace, persistent right-side user inspector, green selected state, compact tool row, and isolated destructive action. The content is slightly less dense because the fixture has eight users instead of the source's twelve; proportions, panel boundaries, and primary-control placement remain equivalent.
 
-- Fonts and typography: passed. The implementation retains the selected mono-led hierarchy, readable challenge copy, strong stage title, and compact utility labels.
-- Spacing and layout rhythm: passed. Campaign status, six-stage timeline, utility navigation, 44/56 challenge-terminal split, and viewport density follow the selected direction. Dividers replace unnecessary nested cards.
-- Colors and visual tokens: passed. Near-black surfaces, graphite layers, muted secondary text, white actions, and the single signal-green state accent match the source.
-- Image and asset fidelity: passed. The source contains no raster artwork. UI icons use the existing Phosphor library; no placeholder imagery, handcrafted SVG, gradients, or emoji are used.
-- Copy and content: passed. Campaign, stage, environment, artifact, hint, submission, notebook, findings, and terminal concepts map to real application data and existing APIs.
-- Responsive behavior: passed. At 390 × 844 the stage timeline scrolls horizontally, controls remain reachable, and the challenge and terminal stack without horizontal page overflow.
-- Accessibility and motion: passed. Controls are semantic, selected stages use `aria-current`, status is expressed by text and icon in addition to color, focus styles remain visible, and Motion transitions honor reduced-motion preference.
+The first mobile comparison found that the wide table pushed the Create user action offscreen. The implementation was revised to stack search and creation controls and collapse the directory to name/email/selection affordance. The second capture confirms the primary action and directory are fully usable without horizontal scrolling.
 
-Focused region comparison was not required because the matched full-size comparison keeps the command bar, timeline labels, challenge controls, and terminal header legible. The mobile capture was reviewed separately for responsive structure.
+## Focused region comparison evidence
 
-## Comparison History
+- Directory: header, rows, selected indicator, initials, role metadata, and footer match the source's compact operational-table treatment.
+- Inspector: profile identity, active status, user facts, role control, memberships, and danger zone follow the source section order and visual separation.
+- Navigation: animated signal-green rail indicator and active fill match the source interaction model.
+- Responsive state: mobile uses the same information hierarchy with reduced columns and stacked inspector.
 
-1. Initial capture: P1 — the workspace selected the first completed stage while the timeline marked stage 3 active. Added a failing regression test, changed default selection to prefer the active stage, and recaptured.
-2. Post-fix capture: the timeline, stage heading, score, and campaign progress all align on stage 3. No actionable P0, P1, or P2 differences remain.
+## Required fidelity surfaces
 
-## Interaction Verification
+- Fonts and typography: existing TestMe mono/sans tokens retained; display hierarchy, small operational labels, truncation, and weights match the source.
+- Spacing and layout rhythm: 172 px rail, fluid directory, 330–390 px inspector, compact 58 px rows, and 14 px region gaps closely match the source. Mobile controls now fit the viewport.
+- Colors and visual tokens: black/graphite surfaces, fine neutral borders, restrained signal green, and isolated red danger treatment match the selected direction. No gradients added.
+- Image quality and asset fidelity: the source contains no raster imagery. Phosphor icons are used for all interface symbols; no placeholder or CSS-drawn icon assets were introduced.
+- Copy and content: labels reflect real TestMe functions—users, cohorts, campaigns, roles, memberships, publishing, assignments, and deletion.
 
-- Selected a completed stage and confirmed the challenge pane transitioned to that stage.
-- Switched from Terminal to Challenge and back to Terminal.
-- Confirmed the terminal visibility follows the selected workspace tab.
-- Checked browser console errors during the primary interaction path: none.
+## Interaction verification
 
-## Follow-up Polish
+- Search by name filters the directory.
+- Selecting a row updates the inspector.
+- Create user form opens.
+- Users, Cohorts, and Campaigns navigation switches correctly.
+- Desktop and mobile routes rendered successfully.
+- Browser console errors checked: none.
+- Playwright result: 2 tests passed.
 
-- P3: production terminal history will naturally be richer than the static QA preview once a student begins issuing commands.
+## Comparison history
+
+1. P2 — Mobile toolbar/table overflow hid the primary Create user action. Fixed by stacking toolbar controls, removing the fixed table minimum width, and collapsing secondary columns. Post-fix evidence: `docs/design-qa/admin-workspace-mobile.png`.
+2. Post-fix pass — no actionable P0, P1, or P2 visual differences remain.
+
+## Follow-up polish
+
+- P3: A future iteration could add a compact inspector drawer on small screens instead of placing it below the directory.
 
 final result: passed

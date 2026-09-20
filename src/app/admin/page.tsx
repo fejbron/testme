@@ -24,11 +24,7 @@ export default async function AdminPage() {
   return (
     <>
       <TopBar userName={user.profile.displayName} roleLabel="Admin" role={user.profile.role} />
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px" }}>
-        <h1 style={{ fontSize: 20, margin: "0 0 4px" }}>Admin console</h1>
-        <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 20px" }}>
-          Manage users, cohorts, and campaigns.
-        </p>
+      <main>
         <AdminConsole
           selfId={user.profile.id}
           initialUsers={initialUsers}
