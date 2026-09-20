@@ -64,6 +64,16 @@ export async function deleteUser(id: string, actorId: string) {
       // Audit rows are immutable history, but their optional actor reference must
       // be detached before the profile can be removed.
       await tx.auditLog.updateMany({ where: { actorId: id }, data: { actorId: null } });
+      // These tables also reference Profile directly without database cascades.
+      // Remove the student's owned activity before deleting the campaign instance
+      // hierarchy and, finally, the profile itself.
+      await tx.submission.deleteMany({ where: { studentId: id } });
+      await tx.finding.deleteMany({ where: { studentId: id } });
+      await tx.evidence.deleteMany({ where: { studentId: id } });
+      await tx.notebookEntry.deleteMany({ where: { studentId: id } });
+      await tx.hintUsage.deleteMany({ where: { studentId: id } });
+      await tx.cohortMember.deleteMany({ where: { studentId: id } });
+      await tx.campaignInstance.deleteMany({ where: { studentId: id } });
       await tx.profile.delete({ where: { id } });
     });
   } catch {

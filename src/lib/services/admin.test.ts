@@ -4,6 +4,13 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   updateMany: vi.fn(),
   deleteProfile: vi.fn(),
+  deleteSubmissions: vi.fn(),
+  deleteFindings: vi.fn(),
+  deleteEvidence: vi.fn(),
+  deleteNotebookEntries: vi.fn(),
+  deleteHintUsages: vi.fn(),
+  deleteCohortMemberships: vi.fn(),
+  deleteCampaignInstances: vi.fn(),
   transaction: vi.fn(),
   deleteAuthUser: vi.fn(),
 }));
@@ -34,11 +41,25 @@ describe("deleteUser", () => {
     mocks.transaction.mockImplementation(async (fn) =>
       fn({
         auditLog: { updateMany: mocks.updateMany },
+        submission: { deleteMany: mocks.deleteSubmissions },
+        finding: { deleteMany: mocks.deleteFindings },
+        evidence: { deleteMany: mocks.deleteEvidence },
+        notebookEntry: { deleteMany: mocks.deleteNotebookEntries },
+        hintUsage: { deleteMany: mocks.deleteHintUsages },
+        cohortMember: { deleteMany: mocks.deleteCohortMemberships },
+        campaignInstance: { deleteMany: mocks.deleteCampaignInstances },
         profile: { delete: mocks.deleteProfile },
       }),
     );
     mocks.deleteProfile.mockResolvedValue({ id: "student-id" });
     mocks.updateMany.mockResolvedValue({ count: 0 });
+    mocks.deleteSubmissions.mockResolvedValue({ count: 0 });
+    mocks.deleteFindings.mockResolvedValue({ count: 0 });
+    mocks.deleteEvidence.mockResolvedValue({ count: 0 });
+    mocks.deleteNotebookEntries.mockResolvedValue({ count: 0 });
+    mocks.deleteHintUsages.mockResolvedValue({ count: 0 });
+    mocks.deleteCohortMemberships.mockResolvedValue({ count: 0 });
+    mocks.deleteCampaignInstances.mockResolvedValue({ count: 0 });
     mocks.deleteAuthUser.mockResolvedValue({ data: {}, error: null });
   });
 
@@ -64,6 +85,13 @@ describe("deleteUser", () => {
       where: { actorId: "student-id" },
       data: { actorId: null },
     });
+    expect(mocks.deleteSubmissions).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
+    expect(mocks.deleteFindings).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
+    expect(mocks.deleteEvidence).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
+    expect(mocks.deleteNotebookEntries).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
+    expect(mocks.deleteHintUsages).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
+    expect(mocks.deleteCohortMemberships).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
+    expect(mocks.deleteCampaignInstances).toHaveBeenCalledWith({ where: { studentId: "student-id" } });
     expect(mocks.deleteProfile).toHaveBeenCalledWith({ where: { id: "student-id" } });
     expect(mocks.deleteAuthUser).toHaveBeenCalledWith("student-id");
   });

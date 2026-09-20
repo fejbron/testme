@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
 import StatusPill from "@/components/StatusPill";
@@ -101,19 +101,31 @@ const labelStyle: React.CSSProperties = {
   color: "var(--muted)",
 };
 
-export default function AdminConsole({ selfId }: { selfId: string }) {
+export default function AdminConsole({
+  selfId,
+  initialUsers,
+  initialCourses,
+  initialCampaigns,
+  initialPackages,
+}: {
+  selfId: string;
+  initialUsers: AdminUser[];
+  initialCourses: Course[];
+  initialCampaigns: Campaign[];
+  initialPackages: Package[];
+}) {
   const [tab, setTab] = useState<Tab>("users");
 
-  const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [users, setUsers] = useState<AdminUser[] | null>(initialUsers);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
 
-  const [courses, setCourses] = useState<Course[] | null>(null);
+  const [courses, setCourses] = useState<Course[] | null>(initialCourses);
   const [cohortsError, setCohortsError] = useState<string | null>(null);
   const [cohortsLoading, setCohortsLoading] = useState(false);
 
-  const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
-  const [packages, setPackages] = useState<Package[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[] | null>(initialCampaigns);
+  const [packages, setPackages] = useState<Package[]>(initialPackages);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
 
@@ -156,12 +168,6 @@ export default function AdminConsole({ selfId }: { selfId: string }) {
       setCampaignsLoading(false);
     }
   }
-
-  useEffect(() => {
-    loadUsers();
-    loadCohorts();
-    loadCampaigns();
-  }, []);
 
   return (
     <div>
