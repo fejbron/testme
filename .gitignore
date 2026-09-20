@@ -6,6 +6,7 @@ node_modules/
 !.env.example
 .secrets/
 .superpowers/
+.worktrees/
 dist/
 coverage/
 *.log
