@@ -23,6 +23,7 @@ class FakeInstance implements SandboxInstance {
   readonly name: string;
   readonly runCommandCalls: SandboxRunCommandArgs[] = [];
   readonly writeFilesCalls: SandboxWriteFile[][] = [];
+  readonly mkDirCalls: string[] = [];
   stopCount = 0;
   deleteCount = 0;
   private readonly runCommandImpl: (args: SandboxRunCommandArgs) => Promise<SandboxCommandResult>;
@@ -45,8 +46,8 @@ class FakeInstance implements SandboxInstance {
     this.writeFilesCalls.push(files);
   }
 
-  async mkDir(): Promise<void> {
-    // not exercised by these tests
+  async mkDir(path: string): Promise<void> {
+    this.mkDirCalls.push(path);
   }
 
   async stop(): Promise<void> {
@@ -123,9 +124,10 @@ describe("createSandboxProvider", () => {
 
       const instance = sdk.instances.get("ws-1");
       expect(instance).toBeDefined();
+      expect(instance?.mkDirCalls).toEqual(["/vercel/sandbox"]);
       expect(instance?.writeFilesCalls).toHaveLength(1);
       const written = instance?.writeFilesCalls[0]?.[0];
-      expect(written?.path).toBe("hello.txt");
+      expect(written?.path).toBe("/vercel/sandbox/hello.txt");
       expect(written?.content.toString("utf8")).toBe("hello world");
     });
 

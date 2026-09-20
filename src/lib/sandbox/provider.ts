@@ -1,3 +1,4 @@
+import { posix } from "node:path";
 import type {
   EnvironmentHandle,
   EnvState,
@@ -89,10 +90,19 @@ export interface EnvironmentProvider {
 
 const DEFAULT_GRADE_TIMEOUT_MS = 45_000;
 const DEFAULT_VCPUS = 1;
+const WORKSPACE_DIR = "/vercel/sandbox";
+
+function workspacePath(path: string): string {
+  const resolved = posix.resolve(WORKSPACE_DIR, path);
+  if (resolved !== WORKSPACE_DIR && !resolved.startsWith(`${WORKSPACE_DIR}/`)) {
+    throw new Error(`seeded file must stay inside ${WORKSPACE_DIR}`);
+  }
+  return resolved;
+}
 
 function decodeSeededFiles(files: SeededFile[]): SandboxWriteFile[] {
   return files.map((file) => ({
-    path: file.path,
+    path: workspacePath(file.path),
     content: Buffer.from(file.contentBase64, "base64"),
     mode: file.mode,
   }));
@@ -134,6 +144,7 @@ function createOptionsFor(spec: WorkstationSpec, persistent: boolean): SandboxCr
 
 async function seedFiles(instance: SandboxInstance, files: SeededFile[]): Promise<void> {
   if (files.length === 0) return;
+  await instance.mkDir(WORKSPACE_DIR);
   await instance.writeFiles(decodeSeededFiles(files));
 }
 
