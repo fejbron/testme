@@ -19,7 +19,7 @@ export const GET = route(async ({ user }) => {
       id: ci.id,
       name: ci.campaignVersion.campaign.name,
       version: ci.campaignVersion.version,
-      status: ci.status,
+      status: ci.status === "PENDING" ? "NOT_STARTED" : ci.status,
       score: computeTotal(ci.scoreEvents),
       progress: {
         completed: ci.challengeInstances.filter((c) => c.status === "COMPLETED").length,
