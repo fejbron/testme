@@ -6,13 +6,14 @@ import { enqueueJob, emitEvent } from "@/lib/events/emit";
 import { EventType, JobType } from "@/lib/events/types";
 import { stageAward } from "@/lib/scoring";
 import { ApiError } from "@/lib/api/handler";
+import { orderStagesByManifest } from "@/lib/campaign/stage-order";
 
 /** Aggregated student-facing overview of a campaign instance (no locked-stage leakage). */
 export async function instanceOverview(campaignInstanceId: string) {
   const instance = await prisma.campaignInstance.findUniqueOrThrow({
     where: { id: campaignInstanceId },
     include: {
-      campaignVersion: { include: { campaign: true, stages: { orderBy: { slug: "asc" } } } },
+      campaignVersion: { include: { campaign: true, stages: true } },
       challengeInstances: { include: { stage: true } },
       environment: true,
       scoreEvents: true,
@@ -22,7 +23,7 @@ export async function instanceOverview(campaignInstanceId: string) {
   const byCategory = computeByCategory(instance.scoreEvents);
   const ciByStage = new Map(instance.challengeInstances.map((c) => [c.stageId, c]));
 
-  const stages = instance.campaignVersion.stages.map((s) => {
+  const stages = orderStagesByManifest(instance.campaignVersion.stages, instance.campaignVersion.manifestJson).map((s) => {
     const ci = ciByStage.get(s.id);
     const status = ci?.status ?? "LOCKED";
     const visible = status !== "LOCKED";

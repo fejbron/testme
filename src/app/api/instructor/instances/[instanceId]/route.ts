@@ -2,6 +2,7 @@ import { route, ApiError } from "@/lib/api/handler";
 import { prisma } from "@/lib/db";
 import { canViewInstructorDashboard } from "@/lib/auth/policies";
 import { computeTotal, computeByCategory } from "@/lib/scoring";
+import { orderStagesByManifest } from "@/lib/campaign/stage-order";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,16 @@ export const GET = route(async ({ user, params }) => {
     score: computeTotal(ci.scoreEvents),
     byCategory: computeByCategory(ci.scoreEvents),
     environment: ci.environment ? { status: ci.environment.status, ref: ci.environment.externalRef } : null,
-    stages: ci.challengeInstances.map((c) => ({ slug: c.stage.slug, title: c.stage.title, status: c.status, score: c.scoreAwarded, attempts: c.attemptCount })),
+    stages: orderStagesByManifest(
+      ci.challengeInstances.map((c) => ({
+        slug: c.stage.slug,
+        title: c.stage.title,
+        status: c.status,
+        score: c.scoreAwarded,
+        attempts: c.attemptCount,
+      })),
+      ci.campaignVersion.manifestJson,
+    ),
     notebook: ci.notebookEntries,
     findings: ci.findings,
     submissions: submissions.map((s) => ({ id: s.id, type: s.type, status: s.status, score: s.scoreAwarded, feedback: s.graderFeedbackJson, at: s.submittedAt })),
