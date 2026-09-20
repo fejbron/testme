@@ -21,6 +21,7 @@ export const GET = route(async ({ user }) => {
       .map((ci) => ({
         id: ci.id,
         name: ci.campaignVersion.campaign.name,
+        description: ci.campaignVersion.campaign.description,
         version: ci.campaignVersion.version,
         difficulty: ci.campaignVersion.campaign.difficulty,
         status: ci.status === "PENDING" ? "NOT_STARTED" : ci.status,

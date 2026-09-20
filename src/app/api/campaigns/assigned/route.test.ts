@@ -30,7 +30,7 @@ describe("assigned campaigns", () => {
         status: "PENDING",
         campaignVersion: {
           version: 1,
-          campaign: { name: "Boot Camp", difficulty: "beginner" },
+          campaign: { name: "Boot Camp", difficulty: "beginner", description: "Start with core decoding skills." },
           stages: [{ id: "stage-1" }],
         },
         challengeInstances: [],
@@ -46,7 +46,14 @@ describe("assigned campaigns", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      campaigns: [{ id: "instance-1", status: "NOT_STARTED", progress: { completed: 0, total: 1 } }],
+      campaigns: [
+        {
+          id: "instance-1",
+          description: "Start with core decoding skills.",
+          status: "NOT_STARTED",
+          progress: { completed: 0, total: 1 },
+        },
+      ],
     });
   });
 
@@ -62,7 +69,7 @@ describe("assigned campaigns", () => {
         status: "PENDING",
         campaignVersion: {
           version: 1,
-          campaign: { name, difficulty },
+          campaign: { name, difficulty, description: `${name} description` },
           stages: [],
         },
         challengeInstances: [],

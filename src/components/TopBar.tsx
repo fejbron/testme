@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SquaresFour, UserCircle } from "@phosphor-icons/react/dist/ssr";
 
 export default function TopBar({
   userName,
@@ -12,55 +13,41 @@ export default function TopBar({
   right?: React.ReactNode;
 }) {
   const links: { href: string; label: string }[] = [];
-  if (role) links.push({ href: "/dashboard", label: "Dashboard" });
+  if (role) links.push({ href: "/dashboard", label: roleLabel === "Mission Control" ? "Campaigns" : "Dashboard" });
   if (role === "INSTRUCTOR" || role === "ADMIN") links.push({ href: "/instructor", label: "Instructor" });
   if (role === "ADMIN") links.push({ href: "/admin", label: "Admin" });
+
   return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "14px 16px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--panel)",
-        flexWrap: "wrap",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-        <span className="mono" style={{ color: "var(--fg-strong)", letterSpacing: "-0.02em", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>▚ testme</span>
-        {roleLabel && <span style={{ color: "var(--muted)", fontSize: 11, textTransform: "uppercase", whiteSpace: "nowrap" }}>{roleLabel}</span>}
-        {links.length > 1 && (
-          <nav style={{ display: "flex", gap: 12, marginLeft: 6 }}>
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} style={{ color: "var(--muted)", fontSize: 13 }}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        )}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        {right}
-        <span style={{ color: "var(--muted)", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }}>{userName}</span>
-        <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            style={{
-              fontFamily: "inherit",
-              fontSize: 12,
-              padding: "6px 10px",
-              borderRadius: 6,
-              background: "transparent",
-              color: "var(--fg)",
-              border: "1px solid var(--border)",
-              cursor: "pointer",
-            }}
-          >
-            Sign out
-          </button>
-        </form>
+    <header className="topbar">
+      <div className="topbar__inner">
+        <div className="topbar__identity">
+          <Link href="/" className="brand-mark" aria-label="TestMe home">
+            <SquaresFour size={18} weight="fill" aria-hidden="true" />
+            <span>testme</span>
+          </Link>
+          {roleLabel && <span className="topbar__section">{roleLabel}</span>}
+          {links.length > 0 && (
+            <nav className="topbar__nav" aria-label="Primary navigation">
+              {links.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+        </div>
+        <div className="topbar__account">
+          {right}
+          <span className="topbar__user">
+            <span>{roleLabel === "Mission Control" ? "Student" : roleLabel}: {userName}</span>
+            <UserCircle size={20} weight="regular" aria-hidden="true" />
+          </span>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="topbar__signout">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   );

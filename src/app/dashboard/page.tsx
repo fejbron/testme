@@ -12,10 +12,8 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <TopBar userName={user.profile.displayName} roleLabel="Student" role={user.profile.role} />
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
-        <h1 style={{ fontSize: 20, margin: "0 0 4px" }}>Assigned campaigns</h1>
-        <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 20px" }}>Pick a campaign to start or resume your investigation.</p>
+      <TopBar userName={user.profile.displayName} roleLabel="Mission Control" role={user.profile.role} />
+      <main className="mission-shell">
         <CampaignList />
       </main>
     </>

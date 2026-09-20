@@ -6,6 +6,7 @@ export type ApiError = { error: string };
 export type AssignedCampaign = {
   id: string;
   name: string;
+  description: string;
   version: number;
   difficulty: string;
   status: string;
