@@ -1,188 +1,170 @@
 import Link from "next/link";
+import {
+  ArrowRight,
+  Books,
+  ChartLineUp,
+  Circle,
+  Flag,
+  ShieldCheck,
+  SquaresFour,
+  TerminalWindow,
+  UsersThree,
+} from "@phosphor-icons/react/dist/ssr";
+import { campaignPaths, marketingStats } from "./marketing-data";
+import styles from "./marketing.module.css";
 
-const stats = [
-  { n: "4", l: "Campaigns" },
-  { n: "26", l: "Challenges" },
-  { n: "5", l: "Grader types" },
-];
+function MarketingHeader() {
+  return (
+    <header className={styles.header}>
+      <div className={styles.headerInner}>
+        <Link href="/" className={styles.brand}><SquaresFour size={18} weight="fill" /> testme</Link>
+        <nav className={styles.nav} aria-label="Marketing navigation">
+          <a href="#campaigns">Campaigns</a>
+          <a href="#platform">How it works</a>
+          <Link href="/instructor">For instructors</Link>
+        </nav>
+        <div className={styles.headerActions}>
+          <Link href="/login" className={styles.textLink}>Sign in</Link>
+          <Link href="/signup" className={styles.primaryButton}>Get started <ArrowRight size={16} /></Link>
+        </div>
+      </div>
+    </header>
+  );
+}
 
-const paths = [
-  {
-    kind: "BEGINNER · 6 STAGES",
-    title: "Boot Camp",
-    desc: "Start here. Decode base64, ROT13, hex and binary, sum a column, and grep a secret out of a noisy log. Short, forgiving, and personalized — the moves every later campaign assumes.",
-    tags: ["Base64", "ROT13", "Hex", "Binary", "Search"],
-  },
-  {
-    kind: "INTERMEDIATE · 6 STAGES",
-    title: "Field Work",
-    desc: "Classical ciphers, a forged token, and logs that hide an intruder. Break Caesar and Vigenère, read a JWT, peel a layered blob, catch a scanner in an access log, and write a script the grader tests on unseen input.",
-    tags: ["Caesar", "Vigenère", "JWT", "Forensics", "Scripting"],
-  },
-  {
-    kind: "ADVANCED · 8 STAGES",
-    title: "Project Janus",
-    desc: "A personalized host, an unknown protocol, a broken service. Investigate a captured filesystem, reverse a binary protocol, write a decoder, do git archaeology, patch a C service, and rebuild what was lost.",
-    tags: ["Network RE", "Decoder", "Git", "Systems", "Crypto"],
-  },
-  {
-    kind: "EXPERT · 6 STAGES",
-    title: "The Gauntlet",
-    desc: "Six escalating puzzles with no scaffolding. Peel a layered cipher, break repeating-key XOR, pull a marker out of an image, walk a hash chain, write a stack-VM interpreter, and trace an injection through a log.",
-    tags: ["Cipher", "XOR", "Stego", "Hash chain", "Interpreter", "Forensics"],
-  },
-];
+function RangeStatus() {
+  return (
+    <aside className={styles.livePanel} aria-label="Live range status">
+      <div className={styles.liveHeader}>
+        <span className={styles.status}><Circle size={9} weight="fill" /> Live range status</span>
+        <time dateTime="2026-09-20">Sep 20, 2026</time>
+      </div>
+      <div className={styles.liveBody}>
+        <div className={styles.online}>
+          <div><strong>247</strong><span> students online</span></div>
+          <dl className={styles.liveStats}>
+            {marketingStats.map((stat) => <div key={stat.l}><dt>{stat.n}</dt><dd>{stat.l}</dd></div>)}
+          </dl>
+        </div>
+        <div className={styles.featured}>
+          <span>Featured campaign</span>
+          <div className={styles.featuredRow}>
+            <Flag size={22} />
+            <div><strong>Boot Camp</strong><small>Beginner · 6 stages</small></div>
+            <ArrowRight size={18} />
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function InvestigationHero() {
+  return (
+    <section className={styles.hero}>
+      <div>
+        <p className={styles.eyebrow}>Hands-on cybersecurity training</p>
+        <h1>Build the skills <span>attackers test.</span></h1>
+        <p className={styles.heroLead}>TestMe gives you real tools, executable environments, and a guided path from fundamentals to real-world exploitation—entirely in your browser.</p>
+        <div className={styles.heroActions}>
+          <Link href="/signup" className={styles.primaryButton}>Start training now <ArrowRight size={17} /></Link>
+          <a href="#campaigns" className={styles.secondaryButton}>Explore campaigns</a>
+        </div>
+        <div className={styles.proof}>
+          <div className={styles.proofItem}><TerminalWindow size={22} /><span><strong>Practical labs</strong>Real tools. Real systems.</span></div>
+          <div className={styles.proofItem}><ChartLineUp size={22} /><span><strong>Track progress</strong>See your growth.</span></div>
+          <div className={styles.proofItem}><UsersThree size={22} /><span><strong>Guided learning</strong>From easy to advanced.</span></div>
+        </div>
+      </div>
+      <RangeStatus />
+    </section>
+  );
+}
+
+function TerminalDemo() {
+  return (
+    <section className={styles.section} id="platform">
+      <div className={styles.sectionHeading}>
+        <p className={styles.eyebrow}>Practice against working systems</p>
+        <h2>Your browser becomes the lab.</h2>
+        <p>Investigate captures, binaries, repositories, services, and hidden state. Recover evidence and prove your conclusion against what actually happened.</p>
+      </div>
+      <div className={styles.terminalLayout}>
+        <div className={styles.terminal}>
+          <div className={styles.terminalHeader}><span><TerminalWindow size={17} /> testme@range:~$</span><b>ENVIRONMENT READY</b></div>
+          <pre>{`$ file capture.pcap
+capture.pcap: pcap capture file, USER0 link-type
+
+$ xxd -l 24 capture.pcap | head -1
+0000: d4c3 b2a1 0200 0400 ...
+
+$ ./decoder < frame.bin
+{"length":16,"msgType":3,"seq":4211}
+
+`}<strong>$ investigation continues</strong></pre>
+        </div>
+        <div className={styles.principles}>
+          <article className={styles.principle}><ShieldCheck size={27} /><div><h3>Personalized environments</h3><p>Each learner works from a unique seed, so understanding matters more than copied answers.</p></div></article>
+          <article className={styles.principle}><Books size={27} /><div><h3>Structured progression</h3><p>Every campaign is available from signup; stages guide you from foundations to expert work.</p></div></article>
+          <article className={styles.principle}><ChartLineUp size={27} /><div><h3>Evidence-based grading</h3><p>Progress reflects the work completed in the environment, not merely the text submitted.</p></div></article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CampaignPath() {
+  return (
+    <section className={styles.section} id="campaigns">
+      <div className={styles.sectionHeading}>
+        <p className={styles.eyebrow}>Learning path</p>
+        <h2>From first decode to final gauntlet.</h2>
+        <p>Four campaigns build on one another. Start with the fundamentals, then move through analysis, reverse engineering, systems work, and unscripted challenges.</p>
+      </div>
+      <div className={styles.campaigns}>
+        {campaignPaths.map((campaign, index) => (
+          <article className={styles.campaign} key={campaign.title}>
+            <span className={styles.campaignIndex}>{String(index + 1).padStart(2, "0")}</span>
+            <div className={styles.campaignContent}>
+              <div className={styles.campaignMeta}><Flag size={14} /> {campaign.kind}</div>
+              <h3>{campaign.title}</h3>
+              <p>{campaign.desc}</p>
+            </div>
+            <div className={styles.campaignSide}>
+              <div className={styles.tags}>{campaign.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+              <div className={styles.campaignFooter}><span>Available at signup</span><ArrowRight size={18} /></div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MarketingFooter() {
+  return (
+    <>
+      <section className={styles.cta}>
+        <div><p className={styles.eyebrow}>Ready when you are</p><h2>Open a terminal. Build skills that transfer.</h2><p>Create an account, launch your first personalized campaign instance, and keep every campaign available as your confidence grows.</p></div>
+        <Link href="/signup" className={styles.primaryButton}>Create account <ArrowRight size={17} /></Link>
+      </section>
+      <footer className={styles.footer}>
+        <div><Link href="/" className={styles.brand}><SquaresFour size={18} weight="fill" /> testme</Link><p>Practice today. Defend tomorrow.</p></div>
+        <div className={styles.footerLinks}><Link href="/login">Sign in</Link><Link href="/signup">Create account</Link><a href="#campaigns">Campaigns</a></div>
+      </footer>
+    </>
+  );
+}
 
 export default function Home() {
   return (
-    <div style={{ minHeight: "100vh" }}>
-      {/* Nav */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 24px",
-          borderBottom: "1px solid var(--border-soft)",
-          maxWidth: 1120,
-          margin: "0 auto",
-        }}
-      >
-        <span className="mono" style={{ color: "var(--fg-strong)", fontWeight: 700, letterSpacing: "-0.02em" }}>
-          ▚ testme
-        </span>
-        <nav style={{ display: "flex", gap: 18, alignItems: "center" }}>
-          <Link href="/login" style={{ color: "var(--muted)", fontSize: 14 }}>
-            Sign in
-          </Link>
-          <Link href="/signup" className="btn btn-primary" style={{ padding: "8px 14px" }}>
-            Create account
-          </Link>
-        </nav>
-      </header>
-
-      {/* Hero */}
-      <main style={{ maxWidth: 1120, margin: "0 auto", padding: "0 24px" }}>
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: 48,
-            alignItems: "center",
-            padding: "72px 0 40px",
-          }}
-        >
-          <div>
-            <p className="eyebrow">&gt;_ investigate · runs in your browser</p>
-            <h1 style={{ fontSize: 56, lineHeight: 1.05, margin: "14px 0 20px" }}>
-              Learn security
-              <br />
-              by <span style={{ textDecoration: "underline", textDecorationThickness: 2, textUnderlineOffset: 6 }}>breaking it.</span>
-            </h1>
-            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.6, maxWidth: 520 }}>
-              TestMe hands you an executable environment — captures, binaries, repositories, services, hidden
-              state — and a personalized secret seed. You reverse engineer, write working tools, recover
-              evidence, and prove your conclusions. Pasting the prompt into an AI is not enough.
-            </p>
-            <div style={{ marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link href="/signup" className="btn btn-primary">
-                ▶ Create account
-              </Link>
-              <Link href="/login" className="btn btn-secondary">
-                Sign in →
-              </Link>
-            </div>
-
-            <div style={{ display: "flex", gap: 44, marginTop: 44 }}>
-              {stats.map((s) => (
-                <div key={s.l}>
-                  <div className="mono" style={{ fontSize: 28, color: "var(--fg-strong)", fontWeight: 700 }}>
-                    {s.n}
-                  </div>
-                  <div className="eyebrow" style={{ letterSpacing: "0.12em", marginTop: 2 }}>
-                    {s.l}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Terminal mock */}
-          <div className="card" style={{ borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ width: 10, height: 10, borderRadius: 99, background: "#3a3a3a" }} />
-              <span style={{ width: 10, height: 10, borderRadius: 99, background: "#3a3a3a" }} />
-              <span style={{ width: 10, height: 10, borderRadius: 99, background: "#3a3a3a" }} />
-              <span className="eyebrow" style={{ marginLeft: 8 }}>
-                workstation — silent-relay
-              </span>
-            </div>
-            <pre
-              className="mono"
-              style={{ margin: 0, padding: 18, fontSize: 13, lineHeight: 1.7, color: "var(--fg)", whiteSpace: "pre-wrap" }}
-            >
-{`$ file capture.pcap
-capture.pcap: pcap capture file, USER0 link-type
-$ xxd -l 24 capture.pcap | head -1
-0000: d4c3 b2a1 0200 0400 ...   magic + version
-$ ./decoder < frame.bin
-{"length":16,"msgType":3,"seq":4211}
-`}
-              <span style={{ color: "var(--fg-strong)" }}>$ </span>
-              <span style={{ background: "var(--fg-strong)", color: "#000" }}>&nbsp;</span>
-            </pre>
-          </div>
-        </section>
-
-        {/* Campaigns */}
-        <section style={{ padding: "40px 0 24px" }}>
-          <p className="eyebrow">Campaigns</p>
-          <h2 style={{ fontSize: 30, margin: "8px 0 6px" }}>Four tracks, one seed engine</h2>
-          <p style={{ color: "var(--muted)", fontSize: 15, maxWidth: 640, marginBottom: 24 }}>
-            From base64 to buffer overflows. Every student gets different concrete values from the same
-            concepts. Stages unlock as you solve them; graded against what actually happened, not the text
-            you typed.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-            {paths.map((p) => (
-              <div key={p.title} className="card" style={{ padding: 20 }}>
-                <p className="eyebrow" style={{ fontSize: 11 }}>
-                  {p.kind}
-                </p>
-                <h3 style={{ fontSize: 20, margin: "8px 0 8px" }}>{p.title}</h3>
-                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{p.desc}</p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
-                  {p.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="mono"
-                      style={{ fontSize: 11, color: "var(--muted)", border: "1px solid var(--border)", padding: "3px 8px", borderRadius: 6 }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section style={{ padding: "48px 0 72px", borderTop: "1px solid var(--border-soft)", marginTop: 24 }}>
-          <h2 style={{ fontSize: 26, marginBottom: 10 }}>Open a terminal and start</h2>
-          <p style={{ color: "var(--muted)", fontSize: 15, maxWidth: 560, marginBottom: 20 }}>
-            Create an account, get a personalized campaign instance, and begin the first investigation.
-            Your progress follows you.
-          </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Link href="/signup" className="btn btn-primary">
-              Create account
-            </Link>
-            <Link href="/login" className="btn btn-secondary">
-              Sign in
-            </Link>
-          </div>
-        </section>
+    <div className={styles.page}>
+      <MarketingHeader />
+      <main className={styles.main}>
+        <InvestigationHero />
+        <TerminalDemo />
+        <CampaignPath />
+        <MarketingFooter />
       </main>
     </div>
   );
