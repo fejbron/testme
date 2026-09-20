@@ -115,7 +115,7 @@ export async function provisionEnvironment(campaignInstanceId: string): Promise<
     log.warn("workstation provisioning failed", { campaignInstanceId, environmentInstanceId: env.id }, { message: err instanceof Error ? err.message : String(err) });
     await prisma.environmentInstance.update({
       where: { id: env.id },
-      data: { status: "FAILED", externalRef: name, metadataJson: { note: "workstation unavailable; artifacts generated" } },
+      data: { status: "FAILED", externalRef: null, metadataJson: { note: "workstation unavailable; artifacts generated" } },
     });
   }
 }
@@ -129,7 +129,7 @@ export async function generateArtifactInstance(artifactInstanceId: string): Prom
 
 export async function startEnvironment(campaignInstanceId: string): Promise<void> {
   const env = await prisma.environmentInstance.findUnique({ where: { campaignInstanceId } });
-  if (env?.externalRef) {
+  if (env?.externalRef && env.status !== "FAILED") {
     const provider = createSandboxProvider();
     await provider.start(env.externalRef);
     await prisma.environmentInstance.update({ where: { id: env.id }, data: { status: "RUNNING", startedAt: new Date() } });
