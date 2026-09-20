@@ -52,7 +52,9 @@ export default function CampaignList() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
               <div style={{ minWidth: 0 }}>
                 <h3 style={{ margin: "0 0 4px", fontSize: 15 }}>{c.name}</h3>
-                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>v{c.version}</p>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>
+                  v{c.version} · {c.difficulty}
+                </p>
               </div>
               <StatusPill status={c.status} />
             </div>

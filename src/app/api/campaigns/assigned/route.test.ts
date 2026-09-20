@@ -30,7 +30,7 @@ describe("assigned campaigns", () => {
         status: "PENDING",
         campaignVersion: {
           version: 1,
-          campaign: { name: "Boot Camp" },
+          campaign: { name: "Boot Camp", difficulty: "beginner" },
           stages: [{ id: "stage-1" }],
         },
         challengeInstances: [],
@@ -48,5 +48,38 @@ describe("assigned campaigns", () => {
     await expect(response.json()).resolves.toMatchObject({
       campaigns: [{ id: "instance-1", status: "NOT_STARTED", progress: { completed: 0, total: 1 } }],
     });
+  });
+
+  it("orders the catalog from beginner through expert and exposes each difficulty", async () => {
+    mocks.findMany.mockResolvedValue(
+      [
+        ["expert", "The Gauntlet"],
+        ["advanced", "Project Janus"],
+        ["beginner", "Boot Camp"],
+        ["intermediate", "Field Work"],
+      ].map(([difficulty, name], index) => ({
+        id: `instance-${index}`,
+        status: "PENDING",
+        campaignVersion: {
+          version: 1,
+          campaign: { name, difficulty },
+          stages: [],
+        },
+        challengeInstances: [],
+        scoreEvents: [],
+      })),
+    );
+
+    const response = await GET(new Request("http://localhost/api/campaigns/assigned"), {
+      params: Promise.resolve({}),
+    });
+    const body = await response.json();
+
+    expect(body.campaigns.map((campaign: { name: string; difficulty: string }) => [campaign.name, campaign.difficulty])).toEqual([
+      ["Boot Camp", "beginner"],
+      ["Field Work", "intermediate"],
+      ["Project Janus", "advanced"],
+      ["The Gauntlet", "expert"],
+    ]);
   });
 });

@@ -7,6 +7,7 @@ import { parseManifest } from "@/lib/campaign/load";
 import { importCampaign, type ImportResult } from "@/lib/campaign/import";
 import { campaignRuntime } from "@/lib/campaigns/registry";
 import { ApiError } from "@/lib/api/handler";
+import { grantCampaignToAllStudents, grantDefaultCampaignAccess } from "@/lib/campaign/access";
 
 /* ------------------------------------------------------------------ users */
 
@@ -29,12 +30,14 @@ export async function createUser(params: { email: string; password: string; disp
     update: { role: params.role, displayName: params.displayName, email: params.email },
     create: { id: data.user.id, email: params.email, displayName: params.displayName, role: params.role },
   });
+  if (profile.role === "STUDENT") await grantDefaultCampaignAccess(profile.id);
   return { id: profile.id, email: profile.email, displayName: profile.displayName, role: profile.role };
 }
 
 export async function setUserRole(id: string, role: Role, actorId: string) {
   if (id === actorId && role !== "ADMIN") throw new ApiError(400, "you cannot remove your own admin role");
   const profile = await prisma.profile.update({ where: { id }, data: { role } });
+  if (profile.role === "STUDENT") await grantDefaultCampaignAccess(profile.id);
   return { id: profile.id, role: profile.role };
 }
 
@@ -181,7 +184,9 @@ export async function publishPackage(slug: string, authorId: string): Promise<Im
   if (!dir) throw new ApiError(404, `no package on disk for "${slug}"`);
   const yamlText = readFileSync(join(process.cwd(), "challenges", dir, "campaign.yaml"), "utf8");
   const knownGenerators = Object.keys(campaignRuntime(slug).generators);
-  return importCampaign(prisma, { yamlText, authorId, knownGenerators });
+  const result = await importCampaign(prisma, { yamlText, authorId, knownGenerators });
+  await grantCampaignToAllStudents(result.slug);
+  return result;
 }
 
 /** Assign a campaign version to a cohort and mint a pending instance for each member. */

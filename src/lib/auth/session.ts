@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { Profile, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { grantDefaultCampaignAccess } from "@/lib/campaign/access";
 import { createSupabaseServerClient } from "./supabase-server";
 
 export type SessionUser = { id: string; email: string; profile: Profile };
@@ -16,11 +17,15 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   // Ensure a Profile row exists (first login provisions it as STUDENT).
   const email = user.email ?? `${user.id}@no-email.local`;
   const displayName = (user.user_metadata?.display_name as string | undefined) ?? email.split("@")[0];
+  const existing = await prisma.profile.findUnique({ where: { id: user.id } });
+  if (existing) return { id: user.id, email, profile: existing };
+
   const profile = await prisma.profile.upsert({
     where: { id: user.id },
     update: {},
     create: { id: user.id, email, displayName, role: "STUDENT" },
   });
+  await grantDefaultCampaignAccess(profile.id);
   return { id: user.id, email, profile };
 });
 

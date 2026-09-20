@@ -7,6 +7,7 @@ export type AssignedCampaign = {
   id: string;
   name: string;
   version: number;
+  difficulty: string;
   status: string;
   score: number;
   progress: { completed: number; total: number };
