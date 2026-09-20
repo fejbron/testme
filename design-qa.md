@@ -1,52 +1,50 @@
-# Admin dashboard design QA
+# Instructor dashboard design QA
 
-- Source visual truth: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-3e96dcca-8cd4-49a2-b314-e5f39b67e08f.png`
-- Desktop implementation: `docs/design-qa/admin-workspace-desktop.png`
-- Mobile implementation: `docs/design-qa/admin-workspace-mobile.png`
-- Desktop viewport: 1440 × 1024 CSS px, device scale factor 1
-- Mobile viewport: 390 × 844 CSS px, device scale factor 1, full-page capture
-- Source dimensions: 1440 × 1024 px
-- Desktop implementation dimensions: 1440 × 1024 px
-- State: Users section, first user selected, create form closed
+- Source visual truth: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-57cf281e-84fd-45f9-91d7-231900c11328.png`
+- Desktop implementation: `docs/design-qa/instructor-watchtower-desktop.png`
+- Mobile implementation: `docs/design-qa/instructor-watchtower-mobile.png`
+- Viewports: 1440 × 1024 and 390 × 844 CSS px, device scale factor 1
+- Source dimensions: 1440 × 1024 px; desktop implementation: 1440 × 1024 px
+- State: all students, Neil Armstrong selected, filters inactive
 
 ## Full-view comparison evidence
 
-The desktop implementation preserves the source hierarchy: narrow vertical section rail, large directory workspace, persistent right-side user inspector, green selected state, compact tool row, and isolated destructive action. The content is slightly less dense because the fixture has eight users instead of the source's twelve; proportions, panel boundaries, and primary-control placement remain equivalent.
+The implementation matches the selected Watchtower structure: persistent campaign rail, compact heading, dense central progress roster, and selected-student inspector. It uses the same near-black surfaces, signal-green selection, thin dividers, compact mono labels, and isolated reset treatment. Fixture density is eight students rather than the source's twelve, while the primary proportions and scan pattern remain equivalent.
 
-The first mobile comparison found that the wide table pushed the Create user action offscreen. The implementation was revised to stack search and creation controls and collapse the directory to name/email/selection affordance. The second capture confirms the primary action and directory are fully usable without horizontal scrolling.
+The responsive view collapses secondary roster columns while keeping student identity, progress, score, filters, selection, and the full intervention inspector available without horizontal scrolling.
 
 ## Focused region comparison evidence
 
-- Directory: header, rows, selected indicator, initials, role metadata, and footer match the source's compact operational-table treatment.
-- Inspector: profile identity, active status, user facts, role control, memberships, and danger zone follow the source section order and visual separation.
-- Navigation: animated signal-green rail indicator and active fill match the source interaction model.
-- Responsive state: mobile uses the same information hierarchy with reduced columns and stacked inspector.
+- Roster: search, campaign scope, attention filter, selected-row treatment, progress fill, environment status, failures, and last-activity data match the source hierarchy.
+- Inspector: identity, campaign, stage progression, score, environment, activity signals, open-record action, and reset control appear in the same operational order.
+- Navigation: scope rail and campaign counts preserve the source's compact left-hand model and active signal-green indicator.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: existing TestMe mono/sans tokens retained; display hierarchy, small operational labels, truncation, and weights match the source.
-- Spacing and layout rhythm: 172 px rail, fluid directory, 330–390 px inspector, compact 58 px rows, and 14 px region gaps closely match the source. Mobile controls now fit the viewport.
-- Colors and visual tokens: black/graphite surfaces, fine neutral borders, restrained signal green, and isolated red danger treatment match the selected direction. No gradients added.
-- Image quality and asset fidelity: the source contains no raster imagery. Phosphor icons are used for all interface symbols; no placeholder or CSS-drawn icon assets were introduced.
-- Copy and content: labels reflect real TestMe functions—users, cohorts, campaigns, roles, memberships, publishing, assignments, and deletion.
+- Fonts and typography: existing TestMe mono/sans tokens retained with comparable hierarchy, weights, truncation, and line height.
+- Spacing and layout rhythm: 180 px rail, fluid roster, 330 px inspector, 61 px rows, and compact 12 px region gaps reproduce the source proportions.
+- Colors and visual tokens: black/graphite surfaces, neutral borders, white hierarchy, signal green, and red warning states align with the selected design; no gradients were introduced.
+- Image quality and asset fidelity: the source contains no raster imagery. Existing Phosphor icons cover all visible symbols; no placeholder or handcrafted icon assets were added.
+- Copy and content: all labels reflect existing instructor data and actions—campaign, progress, score, environment, hints, failures, last activity, student record, and environment reset.
 
 ## Interaction verification
 
-- Search by name filters the directory.
+- Search filters the roster.
 - Selecting a row updates the inspector.
-- Create user form opens.
-- Users, Cohorts, and Campaigns navigation switches correctly.
-- Desktop and mobile routes rendered successfully.
+- Campaign scope and attention-only controls work.
+- Student record navigation remains connected to the existing detail route.
+- Reset environment uses the existing API with confirmation.
+- Desktop and mobile layouts rendered successfully.
 - Browser console errors checked: none.
 - Playwright result: 2 tests passed.
 
 ## Comparison history
 
-1. P2 — Mobile toolbar/table overflow hid the primary Create user action. Fixed by stacking toolbar controls, removing the fixed table minimum width, and collapsing secondary columns. Post-fix evidence: `docs/design-qa/admin-workspace-mobile.png`.
-2. Post-fix pass — no actionable P0, P1, or P2 visual differences remain.
+1. Preview harness loading state prevented initial interaction capture. Fixed by injecting deterministic fixture data into the same production component for QA only; the temporary preview route was removed after capture.
+2. Post-fix comparison found no actionable P0, P1, or P2 visual differences.
 
 ## Follow-up polish
 
-- P3: A future iteration could add a compact inspector drawer on small screens instead of placing it below the directory.
+- P3: On very narrow screens, the inspector could become a slide-up drawer to shorten the page.
 
 final result: passed
