@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Panel from "@/components/Panel";
+import { DownloadSimple, FileText, Lightbulb, Minus, Notebook, Plus } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Button from "@/components/Button";
 import StatusPill from "@/components/StatusPill";
 import {
@@ -13,44 +14,28 @@ import {
   type SubmissionView,
 } from "@/components/api-types";
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 10px",
-  background: "var(--bg)",
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  color: "var(--fg)",
-  fontFamily: "inherit",
-  fontSize: 13,
-};
-
 const SUGGESTED_FINDING_KEYS = ["lengthFieldOffset", "lengthFieldWidth", "lengthFieldEndian", "msgTypeOffset", "seqOffset", "checksumKind"];
-
 type KVRow = { key: string; value: string };
 
 function KeyValueEditor({ rows, onChange, suggestions }: { rows: KVRow[]; onChange: (rows: KVRow[]) => void; suggestions?: string[] }) {
-  function update(i: number, patch: Partial<KVRow>) {
-    onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  function update(index: number, patch: Partial<KVRow>) {
+    onChange(rows.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)));
   }
-  function remove(i: number) {
-    onChange(rows.filter((_, idx) => idx !== i));
-  }
+
   return (
-    <div>
-      {suggestions && suggestions.length > 0 && (
-        <p style={{ fontSize: 11, color: "var(--muted)", margin: "0 0 8px" }}>Suggested keys: {suggestions.join(", ")}</p>
-      )}
-      {rows.map((r, i) => (
-        <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-          <input style={inputStyle} placeholder="key" value={r.key} onChange={(e) => update(i, { key: e.target.value })} />
-          <input style={inputStyle} placeholder="value" value={r.value} onChange={(e) => update(i, { value: e.target.value })} />
-          <Button variant="ghost" onClick={() => remove(i)} type="button">
-            ×
+    <div className="field-editor">
+      {suggestions?.length ? <p>Suggested keys: {suggestions.join(", ")}</p> : null}
+      {rows.map((row, index) => (
+        <div className="field-editor__row" key={index}>
+          <input className="challenge-input" placeholder="key" value={row.key} onChange={(event) => update(index, { key: event.target.value })} />
+          <input className="challenge-input" placeholder="value" value={row.value} onChange={(event) => update(index, { value: event.target.value })} />
+          <Button variant="ghost" aria-label="Remove field" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))} type="button">
+            <Minus size={14} />
           </Button>
         </div>
       ))}
       <Button variant="ghost" type="button" onClick={() => onChange([...rows, { key: "", value: "" }])}>
-        + Add field
+        <Plus size={14} /> Add field
       </Button>
     </div>
   );
@@ -61,30 +46,33 @@ export default function StagePanel({
   stage,
   onGraded,
   onOpenNotebook,
+  compact = false,
+  position,
+  total,
 }: {
   instanceId: string;
   stage: StageView;
   onGraded: () => void;
   onOpenNotebook: () => void;
+  compact?: boolean;
+  position?: number;
+  total?: number;
 }) {
   const cid = stage.challengeInstanceId;
-
+  const reduceMotion = useReducedMotion();
   const [artifacts, setArtifacts] = useState<ArtifactRow[] | null>(null);
   const [artifactsError, setArtifactsError] = useState<string | null>(null);
   const [hints, setHints] = useState<HintRow[] | null>(null);
   const [hintError, setHintError] = useState<string | null>(null);
   const [revealBusy, setRevealBusy] = useState<string | null>(null);
-
   const [valueInput, setValueInput] = useState("");
   const [fieldRows, setFieldRows] = useState<KVRow[]>([{ key: "", value: "" }]);
   const [codeText, setCodeText] = useState("");
   const [codeLang, setCodeLang] = useState<CodeLanguage>("python");
   const [entrypoint, setEntrypoint] = useState("");
-
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [lastSubmission, setLastSubmission] = useState<SubmissionView | null>(null);
-
   const [findingType, setFindingType] = useState("");
   const [findingTitle, setFindingTitle] = useState("");
   const [findingExplanation, setFindingExplanation] = useState("");
@@ -92,7 +80,6 @@ export default function StagePanel({
   const [findingRows, setFindingRows] = useState<KVRow[]>([{ key: "", value: "" }]);
   const [findingBusy, setFindingBusy] = useState(false);
   const [findingMsg, setFindingMsg] = useState<string | null>(null);
-
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelled = useRef(false);
 
@@ -110,11 +97,11 @@ export default function StagePanel({
 
     if (cid) {
       apiFetch<{ artifacts: ArtifactRow[] }>(`/api/challenge-instances/${cid}/artifacts`)
-        .then((d) => !cancelled.current && setArtifacts(d.artifacts))
-        .catch((e: Error) => !cancelled.current && setArtifactsError(e.message));
+        .then((data) => !cancelled.current && setArtifacts(data.artifacts))
+        .catch((error: Error) => !cancelled.current && setArtifactsError(error.message));
       apiFetch<{ hints: HintRow[] }>(`/api/challenge-instances/${cid}/hints`)
-        .then((d) => !cancelled.current && setHints(d.hints))
-        .catch((e: Error) => !cancelled.current && setHintError(e.message));
+        .then((data) => !cancelled.current && setHints(data.hints))
+        .catch((error: Error) => !cancelled.current && setHintError(error.message));
     }
     return () => {
       cancelled.current = true;
@@ -124,19 +111,19 @@ export default function StagePanel({
 
   function pollSubmission(id: string) {
     apiFetch<SubmissionView>(`/api/submissions/${id}`)
-      .then((s) => {
+      .then((submission) => {
         if (cancelled.current) return;
-        setLastSubmission(s);
-        if (s.status === "PENDING" || s.status === "GRADING") {
+        setLastSubmission(submission);
+        if (submission.status === "PENDING" || submission.status === "GRADING") {
           pollTimer.current = setTimeout(() => pollSubmission(id), 1500);
         } else {
           setSubmitting(false);
           onGraded();
         }
       })
-      .catch((e: Error) => {
+      .catch((error: Error) => {
         if (cancelled.current) return;
-        setSubmitError(e.message);
+        setSubmitError(error.message);
         setSubmitting(false);
       });
   }
@@ -146,25 +133,22 @@ export default function StagePanel({
     setSubmitError(null);
     setLastSubmission(null);
     Promise.resolve(body)
-      .then((res) => pollSubmission(res.submissionId))
-      .catch((e: Error) => {
-        setSubmitError(e.message);
+      .then((result) => pollSubmission(result.submissionId))
+      .catch((error: Error) => {
+        setSubmitError(error.message);
         setSubmitting(false);
       });
   }
 
   async function reveal(hint: HintRow) {
-    if (!cid) return;
-    if (!window.confirm(`Reveal hint L${hint.level} for -${hint.penalty} pts?`)) return;
+    if (!cid || !window.confirm(`Reveal hint L${hint.level} for -${hint.penalty} pts?`)) return;
     setRevealBusy(hint.id);
     try {
-      await apiFetch<{ content: string; penaltyApplied: number; alreadyUsed: boolean }>(`/api/challenge-instances/${cid}/hints/${hint.id}/use`, {
-        method: "POST",
-      });
-      const d = await apiFetch<{ hints: HintRow[] }>(`/api/challenge-instances/${cid}/hints`);
-      setHints(d.hints);
-    } catch (e) {
-      setHintError(e instanceof Error ? e.message : "failed to reveal hint");
+      await apiFetch(`/api/challenge-instances/${cid}/hints/${hint.id}/use`, { method: "POST" });
+      const data = await apiFetch<{ hints: HintRow[] }>(`/api/challenge-instances/${cid}/hints`);
+      setHints(data.hints);
+    } catch (error) {
+      setHintError(error instanceof Error ? error.message : "Failed to reveal hint");
     } finally {
       setRevealBusy(null);
     }
@@ -176,7 +160,7 @@ export default function StagePanel({
     setFindingMsg(null);
     try {
       const structuredData: Record<string, string> = {};
-      for (const r of findingRows) if (r.key.trim()) structuredData[r.key.trim()] = r.value;
+      for (const row of findingRows) if (row.key.trim()) structuredData[row.key.trim()] = row.value;
       await apiFetch(`/api/challenge-instances/${cid}/findings`, {
         method: "POST",
         body: JSON.stringify({
@@ -192,260 +176,119 @@ export default function StagePanel({
       setFindingTitle("");
       setFindingExplanation("");
       setFindingRows([{ key: "", value: "" }]);
-    } catch (e) {
-      setFindingMsg(e instanceof Error ? e.message : "failed to save finding");
+    } catch (error) {
+      setFindingMsg(error instanceof Error ? error.message : "Failed to save finding");
     } finally {
       setFindingBusy(false);
     }
   }
 
-  if (!cid) {
-    return (
-      <Panel>
-        <p style={{ color: "var(--muted)", margin: 0 }}>This stage is locked.</p>
-      </Panel>
-    );
-  }
-
+  if (!cid) return <div className="campaign-empty">This stage is locked.</div>;
   const feedback = lastSubmission?.feedback;
+  const nextHint = hints?.find((hint) => !hint.used);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <Panel
-        title="Stage"
-        right={
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <StatusPill status={stage.status} />
-            {stage.points !== null && <span style={{ fontSize: 12, color: "var(--muted)" }}>{stage.points} pts</span>}
-          </div>
-        }
-      >
-        <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>{stage.title}</h3>
-        {stage.description && <p style={{ margin: "0 0 6px", fontSize: 13, lineHeight: 1.5 }}>{stage.description}</p>}
-        {stage.completionType && (
-          <p style={{ margin: 0, fontSize: 11, color: "var(--muted)" }}>
-            Completion type: <strong>{stage.completionType}</strong> · Score awarded: {stage.scoreAwarded}
-          </p>
-        )}
-      </Panel>
+    <motion.article
+      className={`challenge-pane${compact ? " challenge-pane--compact" : ""}`}
+      initial={reduceMotion ? false : { opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+    >
+      <header className="challenge-header">
+        <div>
+          <p className="challenge-eyebrow">Stage {position ?? "—"}{total ? ` of ${total}` : ""}</p>
+          <h2>{stage.title}</h2>
+          {stage.description && <p>{stage.description}</p>}
+        </div>
+        <div className="challenge-score"><span>Stage score</span><strong>{stage.points ?? 0}</strong></div>
+      </header>
 
-      <Panel title="Artifacts">
-        {artifactsError && <p style={{ color: "var(--danger)", fontSize: 12 }}>{artifactsError}</p>}
-        {!artifacts ? (
-          <p style={{ color: "var(--muted)", fontSize: 12, margin: 0 }}>Loading…</p>
-        ) : artifacts.length === 0 ? (
-          <p style={{ color: "var(--muted)", fontSize: 12, margin: 0 }}>No artifacts for this stage.</p>
+      <section className="challenge-section">
+        <h3>Objective</h3>
+        <p>{stage.description || "Complete the required task and submit your result for grading."}</p>
+      </section>
+
+      <section className="challenge-section">
+        <h3>Artifacts</h3>
+        {artifactsError && <p className="challenge-message challenge-message--error">{artifactsError}</p>}
+        {!artifacts ? <div className="challenge-skeleton" /> : artifacts.length === 0 ? (
+          <p className="challenge-muted">No artifacts are required for this stage.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {artifacts.map((a) => (
-              <div
-                key={a.slug}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12 }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div>
-                    <strong>{a.slug}</strong> <span style={{ color: "var(--muted)" }}>({a.kind})</span>
-                  </div>
-                  {a.ready ? (
-                    <div style={{ color: "var(--muted)" }}>
-                      {a.sizeBytes} bytes · {a.sha256?.slice(0, 12)}…
-                    </div>
-                  ) : (
-                    <div style={{ color: "var(--muted)" }}>Not ready yet — try refreshing shortly.</div>
-                  )}
-                </div>
-                {a.ready && a.id ? (
-                  <a href={`/api/artifacts/${a.id}/download`} style={{ fontSize: 12 }}>
-                    Download
-                  </a>
+          <div className="artifact-list">
+            {artifacts.map((artifact) => (
+              <div className="artifact-row" key={artifact.slug}>
+                <span className="artifact-icon" aria-hidden="true"><FileText size={18} /></span>
+                <div><strong>{artifact.slug}</strong><span>{artifact.ready ? `${artifact.sizeBytes} bytes · ${artifact.kind}` : "Preparing artifact…"}</span></div>
+                {artifact.ready && artifact.id ? (
+                  <a className="artifact-download" href={`/api/artifacts/${artifact.id}/download`}><DownloadSimple size={16} /> Download</a>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    onClick={() =>
-                      apiFetch<{ artifacts: ArtifactRow[] }>(`/api/challenge-instances/${cid}/artifacts`).then((d) => setArtifacts(d.artifacts))
-                    }
-                  >
-                    Refresh
-                  </Button>
+                  <Button variant="ghost" onClick={() => apiFetch<{ artifacts: ArtifactRow[] }>(`/api/challenge-instances/${cid}/artifacts`).then((data) => setArtifacts(data.artifacts))}>Refresh</Button>
                 )}
               </div>
             ))}
           </div>
         )}
-      </Panel>
+      </section>
 
-      <Panel title="Submission">
+      {nextHint && (
+        <section className="challenge-hint">
+          <div><Lightbulb size={18} /><p><strong>Need a hint?</strong><span>Reveal level {nextHint.level} for −{nextHint.penalty} points.</span></p></div>
+          <Button variant="ghost" busy={revealBusy === nextHint.id} onClick={() => reveal(nextHint)}>Show hint</Button>
+        </section>
+      )}
+
+      <section className="challenge-section challenge-submit">
+        <h3>Your submission</h3>
         {stage.completionType === "VALUE" && (
-          <div style={{ display: "flex", gap: 8 }}>
-            <input style={inputStyle} placeholder="answer value" value={valueInput} onChange={(e) => setValueInput(e.target.value)} />
-            <Button
-              variant="primary"
-              busy={submitting}
-              onClick={() =>
-                startSubmit(apiFetch(`/api/challenge-instances/${cid}/submissions/value`, { method: "POST", body: JSON.stringify({ value: valueInput }) }))
-              }
-            >
-              Submit
-            </Button>
+          <div className="submit-row">
+            <input className="challenge-input" placeholder="Enter your answer…" value={valueInput} onChange={(event) => setValueInput(event.target.value)} />
+            <Button variant="primary" busy={submitting} onClick={() => startSubmit(apiFetch(`/api/challenge-instances/${cid}/submissions/value`, { method: "POST", body: JSON.stringify({ value: valueInput }) }))}>Submit answer</Button>
           </div>
         )}
-
         {stage.completionType === "FINDING" && (
-          <div>
-            <KeyValueEditor rows={fieldRows} onChange={setFieldRows} suggestions={SUGGESTED_FINDING_KEYS} />
-            <div style={{ marginTop: 10 }}>
-              <Button
-                variant="primary"
-                busy={submitting}
-                onClick={() => {
-                  const fields: Record<string, string> = {};
-                  for (const r of fieldRows) if (r.key.trim()) fields[r.key.trim()] = r.value;
-                  startSubmit(
-                    apiFetch(`/api/challenge-instances/${cid}/submissions/finding`, { method: "POST", body: JSON.stringify({ fields }) }),
-                  );
-                }}
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
+          <div><KeyValueEditor rows={fieldRows} onChange={setFieldRows} suggestions={SUGGESTED_FINDING_KEYS} /><Button variant="primary" busy={submitting} onClick={() => {
+            const fields: Record<string, string> = {};
+            for (const row of fieldRows) if (row.key.trim()) fields[row.key.trim()] = row.value;
+            startSubmit(apiFetch(`/api/challenge-instances/${cid}/submissions/finding`, { method: "POST", body: JSON.stringify({ fields }) }));
+          }}>Submit findings</Button></div>
         )}
-
         {stage.completionType === "CODE" && (
-          <div>
-            <select style={{ ...inputStyle, width: "auto", marginBottom: 8 }} value={codeLang} onChange={(e) => setCodeLang(e.target.value as CodeLanguage)}>
-              <option value="python">python</option>
-              <option value="c">c</option>
-              <option value="javascript">javascript</option>
-            </select>
-            <textarea
-              style={{ ...inputStyle, minHeight: 200, fontSize: 12, resize: "vertical", marginBottom: 8 }}
-              placeholder="source code"
-              value={codeText}
-              onChange={(e) => setCodeText(e.target.value)}
-            />
-            <input
-              style={{ ...inputStyle, marginBottom: 8 }}
-              placeholder="entrypoint (optional)"
-              value={entrypoint}
-              onChange={(e) => setEntrypoint(e.target.value)}
-            />
-            <Button
-              variant="primary"
-              busy={submitting}
-              onClick={() =>
-                startSubmit(
-                  apiFetch(`/api/challenge-instances/${cid}/submissions/code`, {
-                    method: "POST",
-                    body: JSON.stringify({ language: codeLang, sourceText: codeText, entrypoint: entrypoint || undefined }),
-                  }),
-                )
-              }
-            >
-              Submit
-            </Button>
+          <div className="code-submit">
+            <select className="challenge-input" value={codeLang} onChange={(event) => setCodeLang(event.target.value as CodeLanguage)}><option value="python">Python</option><option value="c">C</option><option value="javascript">JavaScript</option></select>
+            <textarea className="challenge-input challenge-code" placeholder="Source code" value={codeText} onChange={(event) => setCodeText(event.target.value)} />
+            <input className="challenge-input" placeholder="Entrypoint (optional)" value={entrypoint} onChange={(event) => setEntrypoint(event.target.value)} />
+            <Button variant="primary" busy={submitting} onClick={() => startSubmit(apiFetch(`/api/challenge-instances/${cid}/submissions/code`, { method: "POST", body: JSON.stringify({ language: codeLang, sourceText: codeText, entrypoint: entrypoint || undefined }) }))}>Submit code</Button>
           </div>
         )}
+        {stage.completionType === "ENVIRONMENT_STATE" && <Button variant="primary" busy={submitting} onClick={() => startSubmit(apiFetch(`/api/challenge-instances/${cid}/submissions/environment-check`, { method: "POST" }))}>Run environment check</Button>}
+        {submitError && <p className="challenge-message challenge-message--error" role="alert">{submitError}</p>}
+        <AnimatePresence>
+          {lastSubmission && (
+            <motion.div className="submission-result" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0 }}>
+              <div><StatusPill status={lastSubmission.status} />{typeof lastSubmission.scoreAwarded === "number" && <span>Score {lastSubmission.scoreAwarded}</span>}</div>
+              {feedback?.summary && <p>{feedback.summary}</p>}
+              {typeof feedback?.score === "number" && typeof feedback.maxScore === "number" && <p>{feedback.score}/{feedback.maxScore}</p>}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
-        {stage.completionType === "ENVIRONMENT_STATE" && (
-          <Button
-            variant="primary"
-            busy={submitting}
-            onClick={() => startSubmit(apiFetch(`/api/challenge-instances/${cid}/submissions/environment-check`, { method: "POST" }))}
-          >
-            Run environment check
-          </Button>
-        )}
+      <details className="challenge-details">
+        <summary>All hints <span>{hints?.filter((hint) => hint.used).length ?? 0}/{hints?.length ?? 0} used</span></summary>
+        {hintError && <p className="challenge-message challenge-message--error">{hintError}</p>}
+        {!hints ? <div className="challenge-skeleton" /> : hints.length === 0 ? <p className="challenge-muted">No hints for this stage.</p> : hints.map((hint) => (
+          <div className="hint-row" key={hint.id}><div><strong>Level {hint.level}</strong><span>−{hint.penalty} points</span>{hint.used && hint.content && <p>{hint.content}</p>}</div>{!hint.used && <Button variant="ghost" busy={revealBusy === hint.id} onClick={() => reveal(hint)}>Reveal</Button>}</div>
+        ))}
+      </details>
 
-        {submitError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{submitError}</p>}
-
-        {lastSubmission && (
-          <div style={{ marginTop: 12, padding: 10, border: "1px solid var(--border)", borderRadius: 8 }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-              <StatusPill status={lastSubmission.status} />
-              {typeof lastSubmission.scoreAwarded === "number" && <span style={{ fontSize: 12, color: "var(--muted)" }}>score: {lastSubmission.scoreAwarded}</span>}
-            </div>
-            {feedback && (
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                {feedback.summary && <p style={{ margin: "0 0 6px" }}>{feedback.summary}</p>}
-                {typeof feedback.score === "number" && typeof feedback.maxScore === "number" && (
-                  <p style={{ margin: "0 0 6px" }}>
-                    {feedback.score}/{feedback.maxScore}
-                  </p>
-                )}
-                {feedback.categories && Object.keys(feedback.categories).length > 0 && (
-                  <ul style={{ margin: 0, paddingLeft: 16 }}>
-                    {Object.entries(feedback.categories).map(([k, v]) => (
-                      <li key={k}>
-                        {k}: {String(v)}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </Panel>
-
-      <Panel title="Hints">
-        {hintError && <p style={{ color: "var(--danger)", fontSize: 12 }}>{hintError}</p>}
-        {!hints ? (
-          <p style={{ color: "var(--muted)", fontSize: 12, margin: 0 }}>Loading…</p>
-        ) : hints.length === 0 ? (
-          <p style={{ color: "var(--muted)", fontSize: 12, margin: 0 }}>No hints for this stage.</p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {hints.map((h) => (
-              <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div>
-                    L{h.level} · −{h.penalty} pts
-                  </div>
-                  {h.used && h.content && <div style={{ color: "var(--muted)", marginTop: 4 }}>{h.content}</div>}
-                </div>
-                {!h.used && (
-                  <Button variant="ghost" busy={revealBusy === h.id} onClick={() => reveal(h)}>
-                    Reveal (−{h.penalty})
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Panel>
-
-      <Panel
-        title="Add finding"
-        right={
-          <Button variant="ghost" onClick={onOpenNotebook}>
-            Open notebook
-          </Button>
-        }
-      >
-        <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-          <input style={inputStyle} placeholder="finding type" value={findingType} onChange={(e) => setFindingType(e.target.value)} />
-          <input style={inputStyle} placeholder="title" value={findingTitle} onChange={(e) => setFindingTitle(e.target.value)} />
-          <select style={{ ...inputStyle, width: 130 }} value={findingConfidence} onChange={(e) => setFindingConfidence(e.target.value)}>
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-          </select>
+      <details className="challenge-details">
+        <summary>Record a finding <span>Save evidence to your case notes</span></summary>
+        <div className="finding-form">
+          <div className="finding-form__row"><input className="challenge-input" placeholder="Finding type" value={findingType} onChange={(event) => setFindingType(event.target.value)} /><input className="challenge-input" placeholder="Title" value={findingTitle} onChange={(event) => setFindingTitle(event.target.value)} /><select className="challenge-input" value={findingConfidence} onChange={(event) => setFindingConfidence(event.target.value)}><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></div>
+          <textarea className="challenge-input" placeholder="Explanation" value={findingExplanation} onChange={(event) => setFindingExplanation(event.target.value)} />
+          <KeyValueEditor rows={findingRows} onChange={setFindingRows} />
+          <div className="finding-form__actions"><Button variant="primary" busy={findingBusy} onClick={submitFinding}>Save finding</Button><Button variant="ghost" onClick={onOpenNotebook}><Notebook size={15} /> Open notebook</Button>{findingMsg && <span>{findingMsg}</span>}</div>
         </div>
-        <textarea
-          style={{ ...inputStyle, minHeight: 60, marginBottom: 8 }}
-          placeholder="explanation"
-          value={findingExplanation}
-          onChange={(e) => setFindingExplanation(e.target.value)}
-        />
-        <KeyValueEditor rows={findingRows} onChange={setFindingRows} />
-        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-          <Button variant="primary" busy={findingBusy} onClick={submitFinding}>
-            Save finding
-          </Button>
-          {findingMsg && <span style={{ fontSize: 12, color: "var(--muted)" }}>{findingMsg}</span>}
-        </div>
-      </Panel>
-    </div>
+      </details>
+    </motion.article>
   );
 }

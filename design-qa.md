@@ -1,28 +1,41 @@
-# Mission Control Design QA
+# Stage Workspace Design QA
 
 ## Evidence
 
-- Selected direction: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-5d6cda66-5224-4c9b-a3b7-d1c1efcec3f1.png`
-- Desktop implementation capture: `docs/design-qa/mission-control-desktop.png` at 1440 × 1024
-- Mobile implementation capture: `docs/design-qa/mission-control-mobile.png` at 390 × 844, full page
-- Side-by-side comparison: `docs/design-qa/mission-control-comparison.png`
+- Source visual truth: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-5bab9964-fa99-4653-b056-794878c1fd90.png`
+- Implementation screenshot: `docs/design-qa/stage-workspace-desktop.png`
+- Responsive screenshot: `docs/design-qa/stage-workspace-mobile.png`
+- Combined comparison: `docs/design-qa/stage-workspace-comparison.png`
+- Source pixels: 1487 × 1058.
+- Implementation pixels and CSS viewport: 1487 × 1058 at device scale factor 1.
+- State: Boot Camp, stage 3 active, terminal selected, environment running.
 
-## Visual review
+## Findings
 
-- Composition: passed. The implementation preserves the two-column mission-control layout, campaign progression rail, compact campaign cards, and progress sidebar.
-- Hierarchy: passed. The mission heading, active campaign, and primary actions remain the strongest elements.
-- Typography: passed. Mono display and interface typography follow the selected terminal-inspired direction with readable sizes and line lengths.
-- Color and surfaces: passed. Graphite surfaces, restrained borders, white actions, and the green signal accent match the selected direction without gradients.
-- Content policy: passed. Unlike the concept's locked states, every campaign remains startable to satisfy the product requirement that students receive easy-through-advanced access on signup.
-- Motion: passed. Entrance staging, progress animation, button feedback, hover elevation, and active-node pulse are subtle and respect reduced-motion preferences.
-- Responsive behavior: passed. At 390 px the progress summary moves above the campaign list, campaign content stacks cleanly, and all actions remain visible.
-- Accessibility: passed. Semantic regions, progress labels, focus-visible states, sufficient target sizes, status text beyond color, and reduced-motion handling are present.
+- Fonts and typography: passed. The implementation retains the selected mono-led hierarchy, readable challenge copy, strong stage title, and compact utility labels.
+- Spacing and layout rhythm: passed. Campaign status, six-stage timeline, utility navigation, 44/56 challenge-terminal split, and viewport density follow the selected direction. Dividers replace unnecessary nested cards.
+- Colors and visual tokens: passed. Near-black surfaces, graphite layers, muted secondary text, white actions, and the single signal-green state accent match the source.
+- Image and asset fidelity: passed. The source contains no raster artwork. UI icons use the existing Phosphor library; no placeholder imagery, handcrafted SVG, gradients, or emoji are used.
+- Copy and content: passed. Campaign, stage, environment, artifact, hint, submission, notebook, findings, and terminal concepts map to real application data and existing APIs.
+- Responsive behavior: passed. At 390 × 844 the stage timeline scrolls horizontally, controls remain reachable, and the challenge and terminal stack without horizontal page overflow.
+- Accessibility and motion: passed. Controls are semantic, selected stages use `aria-current`, status is expressed by text and icon in addition to color, focus styles remain visible, and Motion transitions honor reduced-motion preference.
 
-## Issue log
+Focused region comparison was not required because the matched full-size comparison keeps the command bar, timeline labels, challenge controls, and terminal header legible. The mobile capture was reviewed separately for responsive structure.
 
-- P0: none.
-- P1: none.
-- P2: initial desktop cards were too tall to show the full progression at 1024 px. Reduced card and intro spacing, recaptured, and verified all four campaigns now fit.
-- P2: the initial instant screenshot captured motion elements before their entrance animation completed. Added a capture settle delay and verified the rendered state.
+## Comparison History
+
+1. Initial capture: P1 — the workspace selected the first completed stage while the timeline marked stage 3 active. Added a failing regression test, changed default selection to prefer the active stage, and recaptured.
+2. Post-fix capture: the timeline, stage heading, score, and campaign progress all align on stage 3. No actionable P0, P1, or P2 differences remain.
+
+## Interaction Verification
+
+- Selected a completed stage and confirmed the challenge pane transitioned to that stage.
+- Switched from Terminal to Challenge and back to Terminal.
+- Confirmed the terminal visibility follows the selected workspace tab.
+- Checked browser console errors during the primary interaction path: none.
+
+## Follow-up Polish
+
+- P3: production terminal history will naturally be richer than the static QA preview once a student begins issuing commands.
 
 final result: passed

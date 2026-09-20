@@ -1,46 +1,53 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Panel from "@/components/Panel";
+import { Check, FileText, Flag, LockKey, Notebook, Play, Stop, TerminalWindow } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Button from "@/components/Button";
-import StatusPill from "@/components/StatusPill";
 import ProgressBar from "@/components/ProgressBar";
 import { apiFetch, type InstanceOverview, type StageView } from "@/components/api-types";
-import StagePanel from "./StagePanel";
-import NotebookTab from "./NotebookTab";
 import FindingsTab from "./FindingsTab";
+import NotebookTab from "./NotebookTab";
+import StagePanel from "./StagePanel";
 import Terminal from "./Terminal";
+import { firstAccessibleStage, stageTone } from "./stage-ui";
 
-type Tab = "stages" | "notebook" | "findings" | "terminal";
+type WorkspaceTab = "challenge" | "notebook" | "findings" | "terminal";
 
 const POLL_MS = 5000;
+const WORKSPACE_TABS: Array<{ id: WorkspaceTab; label: string; icon: typeof FileText }> = [
+  { id: "challenge", label: "Challenge", icon: FileText },
+  { id: "notebook", label: "Notebook", icon: Notebook },
+  { id: "findings", label: "Findings", icon: Flag },
+  { id: "terminal", label: "Terminal", icon: TerminalWindow },
+];
 
 export default function InstanceView({ instanceId }: { instanceId: string }) {
   const [overview, setOverview] = useState<InstanceOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("stages");
+  const [tab, setTab] = useState<WorkspaceTab>("terminal");
   const [envBusy, setEnvBusy] = useState<string | null>(null);
   const [envError, setEnvError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const load = useCallback(async () => {
     try {
       const data = await apiFetch<InstanceOverview>(`/api/campaign-instances/${instanceId}`);
       setOverview(data);
       setError(null);
-      setSelectedSlug((prev) => {
-        if (prev && data.stages.some((s) => s.slug === prev)) return prev;
-        const firstUnlocked = data.stages.find((s) => s.status !== "LOCKED");
-        return firstUnlocked?.slug ?? null;
+      setSelectedSlug((previous) => {
+        if (previous && data.stages.some((stage) => stage.slug === previous)) return previous;
+        return firstAccessibleStage(data.stages);
       });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "failed to load campaign instance");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load campaign instance");
     }
   }, [instanceId]);
 
   useEffect(() => {
-    load();
+    void load();
     timerRef.current = setInterval(load, POLL_MS);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -53,169 +60,127 @@ export default function InstanceView({ instanceId }: { instanceId: string }) {
     try {
       await apiFetch(`/api/campaign-instances/${instanceId}/environment/${action}`, { method: "POST" });
       await load();
-    } catch (e) {
-      setEnvError(e instanceof Error ? e.message : `failed to ${action} environment`);
+    } catch (actionError) {
+      setEnvError(actionError instanceof Error ? actionError.message : `Failed to ${action} environment`);
     } finally {
       setEnvBusy(null);
     }
   }
 
-  if (error && !overview) {
-    return (
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: 24 }}>
-        <p style={{ color: "var(--danger)" }}>{error}</p>
-      </main>
-    );
-  }
+  if (error && !overview) return <main className="campaign-loading campaign-loading--error">{error}</main>;
 
   if (!overview) {
     return (
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: 24 }}>
-        <p style={{ color: "var(--muted)" }}>Loading…</p>
+      <main className="campaign-loading" aria-busy="true">
+        <span className="campaign-loading__pulse" /> Preparing campaign workspace…
       </main>
     );
   }
 
-  const selectedStage: StageView | undefined = overview.stages.find((s) => s.slug === selectedSlug);
+  const selectedStage: StageView | undefined = overview.stages.find((stage) => stage.slug === selectedSlug);
+  const selectedStagePosition = Math.max(overview.stages.findIndex((stage) => stage.slug === selectedSlug) + 1, 1);
+  const environmentStatus = overview.environment?.status ?? "PENDING";
+  const environmentRunning = environmentStatus === "RUNNING";
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "16px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-        <div>
-          <h1 style={{ margin: "0 0 4px", fontSize: 19 }}>{overview.campaign.name}</h1>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>
-            v{overview.campaign.version} · <StatusPill status={overview.status} />
-          </p>
+    <main className="campaign-shell">
+      <motion.section className="campaign-command" initial={reduceMotion ? false : { opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="campaign-command__identity">
+          <h1>{overview.campaign.name}</h1>
+          <span>v{overview.campaign.version}</span>
+          <span className="campaign-live"><i />{overview.status.replace(/_/g, " ")}</span>
         </div>
-        <div style={{ minWidth: 200 }}>
-          <ProgressBar value={overview.progress.completed} max={overview.progress.total} label="Stages" />
-          <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--muted)" }}>
-            Score: <strong style={{ color: "var(--fg)" }}>{overview.score}</strong>
-          </p>
+        <div className="campaign-command__progress">
+          <div><strong>{selectedStagePosition} / {overview.progress.total}</strong><span>stages</span></div>
+          <ProgressBar value={selectedStagePosition} max={overview.progress.total} />
         </div>
-      </div>
-
-      <Panel
-        title="Environment"
-        right={
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <StatusPill status={overview.environment?.status ?? "PENDING"} />
-            <Button variant="primary" busy={envBusy === "start"} onClick={() => runEnvAction("start")}>
-              Start
-            </Button>
-            <Button variant="ghost" busy={envBusy === "stop"} onClick={() => runEnvAction("stop")}>
-              Stop
-            </Button>
-            <Button variant="ghost" busy={envBusy === "reset"} onClick={() => runEnvAction("reset")}>
-              Reset
-            </Button>
-            <Button variant={tab === "terminal" ? "primary" : "ghost"} onClick={() => setTab(tab === "terminal" ? "stages" : "terminal")}>
-              {tab === "terminal" ? "Close terminal" : "Open terminal"}
-            </Button>
+        <div className="campaign-command__score"><span>Score</span><strong>{overview.score}</strong></div>
+        <div className="campaign-command__environment">
+          <div className="environment-readout">
+            <span>Environment</span>
+            <strong className={environmentRunning ? "is-running" : ""}><i />{environmentStatus}</strong>
           </div>
-        }
-        style={{ marginBottom: 12 }}
-      >
-        {envError && <p style={{ color: "var(--danger)", fontSize: 12, margin: "0 0 8px" }}>{envError}</p>}
-        {overview.environment?.services && overview.environment.services.length > 0 ? (
-          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>Services: {overview.environment.services.join(", ")}</p>
-        ) : (
-          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>No services reported.</p>
-        )}
-      </Panel>
+          <div className="environment-actions">
+            <Button variant="ghost" disabled={environmentRunning} busy={envBusy === "start"} onClick={() => runEnvAction("start")}>
+              <Play size={14} weight="fill" /> Start
+            </Button>
+            <Button variant="ghost" disabled={!environmentRunning} busy={envBusy === "stop"} onClick={() => runEnvAction("stop")}>
+              <Stop size={14} weight="fill" /> Stop
+            </Button>
+            <Button variant="ghost" busy={envBusy === "reset"} onClick={() => runEnvAction("reset")}>Reset</Button>
+          </div>
+        </div>
+      </motion.section>
 
-      {overview.recentEvents.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            overflowX: "auto",
-            padding: "8px 2px",
-            marginBottom: 12,
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          {overview.recentEvents.map((e, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: 11,
-                color: "var(--muted)",
-                whiteSpace: "nowrap",
-                border: "1px solid var(--border)",
-                borderRadius: 999,
-                padding: "3px 9px",
-              }}
-              title={new Date(e.at).toLocaleString()}
+      {envError && <motion.p className="campaign-alert" initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert">{envError}</motion.p>}
+
+      <section className="stage-timeline" aria-label="Campaign stages">
+        {overview.stages.map((stage, index) => {
+          const selected = stage.slug !== null && stage.slug === selectedSlug;
+          const tone = stageTone(stage, selected);
+          const locked = tone === "locked";
+          return (
+            <motion.button
+              key={stage.slug ?? `locked-${index}`}
+              className={`stage-step stage-step--${tone}`}
+              disabled={locked}
+              onClick={() => stage.slug && setSelectedSlug(stage.slug)}
+              aria-current={selected ? "step" : undefined}
+              whileHover={locked || reduceMotion ? undefined : { y: -2 }}
+              whileTap={locked || reduceMotion ? undefined : { scale: 0.98 }}
             >
-              {e.type.replace(/_/g, " ")}
-            </span>
-          ))}
-        </div>
-      )}
+              <span className="stage-step__track" aria-hidden="true" />
+              <motion.span
+                className="stage-step__marker"
+                animate={tone === "active" && !reduceMotion ? { scale: [1, 1.12, 1] } : undefined}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                {tone === "complete" ? <Check size={13} weight="bold" /> : locked ? <LockKey size={12} /> : null}
+              </motion.span>
+              <span className="stage-step__number">{String(index + 1).padStart(2, "0")}</span>
+              <strong>{stage.title}</strong>
+              <small>{tone === "complete" ? "Complete" : tone === "active" ? "In progress" : locked ? "Locked" : "Ready"}</small>
+            </motion.button>
+          );
+        })}
+      </section>
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-        {(["stages", "notebook", "findings", "terminal"] as Tab[]).map((t) => (
-          <Button key={t} variant={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)} style={{ textTransform: "capitalize" }}>
-            {t}
-          </Button>
+      <nav className="workspace-tabs" aria-label="Campaign tools">
+        {WORKSPACE_TABS.map(({ id, label, icon: Icon }) => (
+          <button key={id} className={tab === id ? "is-active" : ""} onClick={() => setTab(id)}>
+            <Icon size={19} weight={tab === id ? "bold" : "regular"} /> {label}
+          </button>
         ))}
-      </div>
+      </nav>
 
-      {tab === "stages" && (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 12, alignItems: "start" }}>
-          <Panel title="Stages" style={{ position: "sticky", top: 12 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {overview.stages.map((s, i) => {
-                const locked = s.status === "LOCKED";
-                const isSelected = s.slug !== null && s.slug === selectedSlug;
-                return (
-                  <button
-                    key={s.slug ?? `locked-${i}`}
-                    disabled={locked}
-                    onClick={() => s.slug && setSelectedSlug(s.slug)}
-                    style={{
-                      textAlign: "left",
-                      fontFamily: "inherit",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 4,
-                      padding: "8px 10px",
-                      borderRadius: 8,
-                      border: "1px solid",
-                      borderColor: isSelected ? "var(--accent)" : "var(--border)",
-                      background: isSelected ? "rgba(57,211,187,0.08)" : "transparent",
-                      color: locked ? "var(--muted)" : "var(--fg)",
-                      cursor: locked ? "default" : "pointer",
-                    }}
-                  >
-                    <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-                      {locked && "🔒"} {s.title}
-                    </span>
-                    <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                      <StatusPill status={s.status} />
-                      {s.points !== null && <span style={{ fontSize: 11, color: "var(--muted)" }}>{s.points} pts</span>}
-                      {s.scoreAwarded > 0 && <span style={{ fontSize: 11, color: "var(--accent)" }}>+{s.scoreAwarded}</span>}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </Panel>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.section
+          key={tab}
+          className={`campaign-workspace campaign-workspace--${tab}`}
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, y: -5 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        >
+          {tab === "challenge" && (selectedStage ? (
+            <StagePanel position={selectedStagePosition} total={overview.stages.length} instanceId={instanceId} stage={selectedStage} onGraded={load} onOpenNotebook={() => setTab("notebook")} />
+          ) : <div className="campaign-empty">No stage is available yet.</div>)}
 
-          {selectedStage ? (
-            <StagePanel instanceId={instanceId} stage={selectedStage} onGraded={load} onOpenNotebook={() => setTab("notebook")} />
-          ) : (
-            <Panel>
-              <p style={{ color: "var(--muted)", margin: 0 }}>No stage unlocked yet.</p>
-            </Panel>
+          {tab === "terminal" && (
+            <>
+              <div className="campaign-workspace__challenge">
+                {selectedStage ? (
+                  <StagePanel compact position={selectedStagePosition} total={overview.stages.length} instanceId={instanceId} stage={selectedStage} onGraded={load} onOpenNotebook={() => setTab("notebook")} />
+                ) : <div className="campaign-empty">No stage is available yet.</div>}
+              </div>
+              <div className="campaign-workspace__utility"><Terminal instanceId={instanceId} envStatus={environmentStatus} /></div>
+            </>
           )}
-        </div>
-      )}
 
-      {tab === "notebook" && <NotebookTab instanceId={instanceId} />}
-      {tab === "findings" && <FindingsTab instanceId={instanceId} />}
-      {tab === "terminal" && <Terminal instanceId={instanceId} envStatus={overview.environment?.status ?? "PENDING"} />}
+          {tab === "notebook" && <NotebookTab instanceId={instanceId} />}
+          {tab === "findings" && <FindingsTab instanceId={instanceId} />}
+        </motion.section>
+      </AnimatePresence>
     </main>
   );
 }

@@ -13,7 +13,7 @@ export default async function InstancePage({ params }: { params: Promise<{ insta
 
   return (
     <>
-      <TopBar userName={user.profile.displayName} roleLabel="Student" role={user.profile.role} />
+      <TopBar userName={user.profile.displayName} roleLabel="Mission Control" role={user.profile.role} />
       <InstanceView instanceId={instanceId} />
     </>
   );

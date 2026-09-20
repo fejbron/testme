@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Panel from "@/components/Panel";
+import { TerminalWindow } from "@phosphor-icons/react";
 import { apiFetch } from "@/components/api-types";
 import "@xterm/xterm/css/xterm.css";
 
@@ -103,14 +103,18 @@ export default function Terminal({ instanceId, envStatus }: { instanceId: string
   }, [instanceId]);
 
   return (
-    <Panel title="Terminal">
+    <section className="sandbox-terminal">
+      <header className="sandbox-terminal__header">
+        <span><TerminalWindow size={19} /> Sandbox terminal</span>
+        <strong className={envStatus === "RUNNING" ? "is-running" : ""}><i />{envStatus}</strong>
+      </header>
       {envStatus !== "RUNNING" && (
-        <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 0 }}>
+        <p className="sandbox-terminal__notice">
           Environment status is {envStatus}. Commands will fail until it is running.
         </p>
       )}
-      {notice && <p style={{ color: "var(--danger)", fontSize: 12 }}>{notice}</p>}
-      <div ref={containerRef} style={{ height: 420, width: "100%", overflow: "hidden" }} />
-    </Panel>
+      {notice && <p className="sandbox-terminal__notice">{notice}</p>}
+      <div className="sandbox-terminal__screen" ref={containerRef} />
+    </section>
   );
 }
