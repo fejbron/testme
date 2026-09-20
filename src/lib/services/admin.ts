@@ -40,9 +40,35 @@ export async function setUserRole(id: string, role: Role, actorId: string) {
 
 export async function deleteUser(id: string, actorId: string) {
   if (id === actorId) throw new ApiError(400, "you cannot delete your own account");
+
+  const profile = await prisma.profile.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      _count: { select: { coursesOwned: true, campaignsAuthored: true } },
+    },
+  });
+  if (!profile) throw new ApiError(404, "user not found");
+  if (profile._count.coursesOwned > 0 || profile._count.campaignsAuthored > 0) {
+    throw new ApiError(409, "Reassign this user's owned courses and campaigns before deleting them.");
+  }
+
   const admin = createSupabaseServiceClient();
-  await admin.auth.admin.deleteUser(id).catch(() => {}); // may already be gone
-  await prisma.profile.delete({ where: { id } }).catch(() => {});
+  const { error } = await admin.auth.admin.deleteUser(id);
+  if (error && !/not found/i.test(error.message)) {
+    throw new ApiError(502, "Could not delete the authentication account. Try again.");
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Audit rows are immutable history, but their optional actor reference must
+      // be detached before the profile can be removed.
+      await tx.auditLog.updateMany({ where: { actorId: id }, data: { actorId: null } });
+      await tx.profile.delete({ where: { id } });
+    });
+  } catch {
+    throw new ApiError(409, "User could not be deleted because related records still reference it.");
+  }
   return { ok: true };
 }
 
