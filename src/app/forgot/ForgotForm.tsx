@@ -1,15 +1,11 @@
 "use client";
-import { useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 
-const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", marginBottom: 12, background: "var(--panel)",
-  border: "1px solid var(--border)", borderRadius: 6, color: "var(--fg)", fontFamily: "inherit",
-};
-const button: React.CSSProperties = {
-  width: "100%", padding: "11px", background: "var(--accent)", color: "#04110e",
-  border: 0, borderRadius: 6, fontWeight: 700, cursor: "pointer",
-};
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowRight, EnvelopeSimple } from "@phosphor-icons/react";
+import { AuthNotice } from "@/app/auth/AuthShell";
+import styles from "@/app/auth/auth.module.css";
+import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 
 export default function ForgotForm() {
   const [email, setEmail] = useState("");
@@ -31,14 +27,22 @@ export default function ForgotForm() {
   }
 
   if (sent) {
-    return <p style={{ color: "var(--accent)", fontSize: 14 }}>If an account exists for {email}, a reset link is on its way. Check your inbox.</p>;
+    return (
+      <div className={styles.successPanel}>
+        <AuthNotice tone="success">If an account exists for {email}, a reset link is on its way. Check your inbox.</AuthNotice>
+        <Link href="/login">Return to sign in</Link>
+      </div>
+    );
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <input style={input} type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      {err && <p style={{ color: "var(--danger)", fontSize: 13 }}>{err}</p>}
-      <button type="submit" disabled={busy} style={button}>{busy ? "…" : "Send reset link"}</button>
+    <form onSubmit={onSubmit} className={styles.form}>
+      <label className={styles.field} htmlFor="recovery-email">
+        <span className={styles.label}>Email</span>
+        <span className={styles.control}><EnvelopeSimple size={18} aria-hidden="true" /><input id="recovery-email" className={styles.input} type="email" autoComplete="email" placeholder="you@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} required /></span>
+      </label>
+      {err ? <AuthNotice tone="error">{err}</AuthNotice> : null}
+      <button type="submit" disabled={busy} className={styles.submit}>{busy ? "Sending link…" : <>Send reset link <ArrowRight size={17} /></>}</button>
     </form>
   );
 }

@@ -1,13 +1,18 @@
+import Link from "next/link";
+import AuthShell from "../AuthShell";
 import ResetForm from "./ResetForm";
 
 export const runtime = "nodejs";
 
 export default function ResetPage() {
   return (
-    <main style={{ maxWidth: 380, margin: "0 auto", padding: "80px 24px" }}>
-      <p className="eyebrow" style={{ letterSpacing: "0.18em" }}>▚ TESTME</p>
-      <h1 style={{ fontSize: 26, margin: "10px 0 24px" }}>Set a new password</h1>
+    <AuthShell
+      eyebrow="Recovery session"
+      title="Set a new password."
+      description="Choose a secure password with at least eight characters to restore account access."
+      footer={<Link href="/login">Return to sign in</Link>}
+    >
       <ResetForm />
-    </main>
+    </AuthShell>
   );
 }
