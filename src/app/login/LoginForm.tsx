@@ -32,15 +32,15 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className={styles.form}>
-      <label className={styles.field} htmlFor="login-email">
-        <span className={styles.label}>Email</span>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="login-email">Email</label>
         <span className={styles.control}>
           <EnvelopeSimple size={18} aria-hidden="true" />
           <input id="login-email" className={styles.input} type="email" autoComplete="email" placeholder="you@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </span>
-      </label>
-      <label className={styles.field} htmlFor="login-password">
-        <span className={styles.label}>Password</span>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="login-password">Password</label>
         <span className={styles.control}>
           <LockKey size={18} aria-hidden="true" />
           <input id="login-password" className={styles.input} type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
@@ -48,7 +48,7 @@ export default function LoginForm() {
             {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
           </button>
         </span>
-      </label>
+      </div>
       {err ? <AuthNotice tone="error">{err}</AuthNotice> : null}
       <button type="submit" disabled={busy} className={styles.submit}>
         {busy ? "Signing in…" : <>Sign in <ArrowRight size={17} /></>}

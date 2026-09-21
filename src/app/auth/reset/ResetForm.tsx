@@ -48,19 +48,19 @@ export default function ResetForm() {
 
   return (
     <form onSubmit={onSubmit} className={styles.form}>
-      <label className={styles.field} htmlFor="reset-password">
-        <span className={styles.label}>New password</span>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="reset-password">New password</label>
         <span className={styles.fieldHint}>Minimum 8 characters</span>
         <span className={styles.control}>
           <LockKey size={18} aria-hidden="true" />
           <input id="reset-password" className={styles.input} type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a secure password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <button className={styles.reveal} type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide passwords" : "Show passwords"}>{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}</button>
         </span>
-      </label>
-      <label className={styles.field} htmlFor="reset-confirm">
-        <span className={styles.label}>Confirm new password</span>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="reset-confirm">Confirm new password</label>
         <span className={styles.control}><LockKey size={18} aria-hidden="true" /><input id="reset-confirm" className={styles.input} type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Repeat your password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></span>
-      </label>
+      </div>
       {err ? <AuthNotice tone="error">{err}</AuthNotice> : null}
       <button type="submit" disabled={busy} className={styles.submit}>{busy ? "Updating password…" : <>Set new password <ArrowRight size={17} /></>}</button>
     </form>

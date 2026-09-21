@@ -1,50 +1,48 @@
-# Instructor dashboard design QA
+# Remaining pages redesign QA
 
-- Source visual truth: `C:\Users\EdBron\.codex\generated_images\01a0bf90-116a-7d33-8fb1-b84ac7cf7e57\exec-57cf281e-84fd-45f9-91d7-231900c11328.png`
-- Desktop implementation: `docs/design-qa/instructor-watchtower-desktop.png`
-- Mobile implementation: `docs/design-qa/instructor-watchtower-mobile.png`
-- Viewports: 1440 × 1024 and 390 × 844 CSS px, device scale factor 1
-- Source dimensions: 1440 × 1024 px; desktop implementation: 1440 × 1024 px
-- State: all students, Neil Armstrong selected, filters inactive
+- Visual source of truth: `docs/design-qa/remaining-pages-option-3-source.png`
+- Landing capture: `docs/design-qa/remaining-pages-landing-desktop.png`
+- Authentication capture: `docs/design-qa/remaining-pages-auth-desktop.png`
+- Student case-file capture: `docs/design-qa/remaining-pages-student-detail-desktop.png`
+- Mobile capture: `docs/design-qa/remaining-pages-mobile.png`
+- Desktop viewport: 1440 x 1024 CSS px; mobile viewport: 390 x 844 CSS px
+- Device scale factor: 1
+- Source dimensions: 1487 x 1058 px; desktop captures: 1440 x 1024 px; mobile capture: 390 x 844 px
 
-## Full-view comparison evidence
+## Tested state and interactions
 
-The implementation matches the selected Watchtower structure: persistent campaign rail, compact heading, dense central progress roster, and selected-student inspector. It uses the same near-black surfaces, signal-green selection, thin dividers, compact mono labels, and isolated reset treatment. Fixture density is eight students rather than the source's twelve, while the primary proportions and scan pattern remain equivalent.
+The landing page was tested with its primary sign-up and sign-in navigation. Authentication QA covered field labels, password reveal, short-password validation, a mocked forgot-password request, and the reset-password waiting state. The instructor student case file covered every tab, invalid score adjustment, empty stage-reset validation, and all three destructive confirmation dialogs; confirmations were dismissed so no data was mutated.
 
-The responsive view collapses secondary roster columns while keeping student identity, progress, score, filters, selection, and the full intervention inspector available without horizontal scrolling.
+The final Playwright run passed. Desktop and mobile pages rendered without page-level horizontal overflow, uncaught page exceptions, or browser console errors.
 
-## Focused region comparison evidence
+## Full-view comparison
 
-- Roster: search, campaign scope, attention filter, selected-row treatment, progress fill, environment status, failures, and last-activity data match the source hierarchy.
-- Inspector: identity, campaign, stage progression, score, environment, activity signals, open-record action, and reset control appear in the same operational order.
-- Navigation: scope rail and campaign counts preserve the source's compact left-hand model and active signal-green indicator.
+The implementation follows the selected Operations Grid direction across all three surfaces: near-black and graphite panels, hairline borders, signal-green actions and status, compact monospaced operational labels, large high-contrast headings, and restrained motion. The landing page expands the source concept into a complete responsive marketing page. Authentication preserves the source's split secure-access workspace. The student detail page translates the source into an operational case file with the overview selected by default and every supporting data section accessible by tabs.
 
-## Required fidelity surfaces
+## Focused comparisons
 
-- Fonts and typography: existing TestMe mono/sans tokens retained with comparable hierarchy, weights, truncation, and line height.
-- Spacing and layout rhythm: 180 px rail, fluid roster, 330 px inspector, 61 px rows, and compact 12 px region gaps reproduce the source proportions.
-- Colors and visual tokens: black/graphite surfaces, neutral borders, white hierarchy, signal green, and red warning states align with the selected design; no gradients were introduced.
-- Image quality and asset fidelity: the source contains no raster imagery. Existing Phosphor icons cover all visible symbols; no placeholder or handcrafted icon assets were added.
-- Copy and content: all labels reflect existing instructor data and actions—campaign, progress, score, environment, hints, failures, last activity, student record, and environment reset.
+- Landing: headline hierarchy, green primary action, system-status treatment, proof points, and live range panel match the source's visual rhythm.
+- Authentication: split context/form layout, explicit field labels, focused controls, password visibility action, error placement, and recovery routes retain the source hierarchy.
+- Student case file: identity header, status metadata, section tabs, metric cards, activity data, intervention actions, and isolated destructive controls match the operations-console structure.
+- Mobile: content reflows to one column, primary controls remain reachable, labels remain readable, and no persistent horizontal document scrolling occurs.
 
-## Interaction verification
+## Fidelity surfaces
 
-- Search filters the roster.
-- Selecting a row updates the inspector.
-- Campaign scope and attention-only controls work.
-- Student record navigation remains connected to the existing detail route.
-- Reset environment uses the existing API with confirmation.
-- Desktop and mobile layouts rendered successfully.
-- Browser console errors checked: none.
-- Playwright result: 2 tests passed.
+- Typography: existing TestMe sans and mono tokens are used consistently for display, body, labels, and telemetry.
+- Spacing: dense operational modules retain clear grouping and a consistent compact rhythm at both breakpoints.
+- Color: black/graphite surfaces, neutral borders, white hierarchy, signal green, amber, and destructive red align with the selected direction; no gradients were added.
+- Assets: the source uses no raster illustration requiring extraction. Phosphor icons provide the interface symbols with consistent stroke weight; no placeholder icons were introduced.
+- Copy: public, authentication, student progress, scoring, environment, activity, and reset language remains connected to real product behavior.
+- Accessibility and responsiveness: controls have explicit accessible names, keyboard-native elements, visible states, reduced-motion support, and layouts that fit the tested mobile viewport.
 
 ## Comparison history
 
-1. Preview harness loading state prevented initial interaction capture. Fixed by injecting deterministic fixture data into the same production component for QA only; the temporary preview route was removed after capture.
-2. Post-fix comparison found no actionable P0, P1, or P2 visual differences.
+1. The first capture caught an entrance animation and a stale preview tab. All evidence was recaptured after a clean navigation with animations disabled.
+2. P2: password inputs inherited the reveal button text in their accessible names because both were nested in one label. Fixed with explicit `htmlFor` labels and separately grouped controls; browser verification passed.
+3. P2: the mobile authentication entrance transform temporarily widened the document. Fixed with page clipping, a `minmax(0, 1fr)` mobile grid, and explicit panel width constraints; browser verification passed.
 
-## Follow-up polish
+## Findings
 
-- P3: On very narrow screens, the inspector could become a slide-up drawer to shorten the page.
+No P0, P1, or P2 issues remain. P3: the local development environment could not download the configured Google font and used the CSS fallback; the production build and deployment should confirm the hosted font path under normal network access.
 
 final result: passed

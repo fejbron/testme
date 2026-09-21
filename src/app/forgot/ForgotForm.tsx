@@ -37,10 +37,10 @@ export default function ForgotForm() {
 
   return (
     <form onSubmit={onSubmit} className={styles.form}>
-      <label className={styles.field} htmlFor="recovery-email">
-        <span className={styles.label}>Email</span>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="recovery-email">Email</label>
         <span className={styles.control}><EnvelopeSimple size={18} aria-hidden="true" /><input id="recovery-email" className={styles.input} type="email" autoComplete="email" placeholder="you@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} required /></span>
-      </label>
+      </div>
       {err ? <AuthNotice tone="error">{err}</AuthNotice> : null}
       <button type="submit" disabled={busy} className={styles.submit}>{busy ? "Sending link…" : <>Send reset link <ArrowRight size={17} /></>}</button>
     </form>

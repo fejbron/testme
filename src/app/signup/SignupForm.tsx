@@ -47,27 +47,27 @@ export default function SignupForm() {
 
   return (
     <form onSubmit={onSubmit} className={styles.form}>
-      <label className={styles.field} htmlFor="signup-name">
-        <span className={styles.label}>Display name</span>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="signup-name">Display name</label>
         <span className={styles.control}><User size={18} aria-hidden="true" /><input id="signup-name" className={styles.input} type="text" autoComplete="name" placeholder="How should we address you?" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></span>
-      </label>
-      <label className={styles.field} htmlFor="signup-email">
-        <span className={styles.label}>Email</span>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="signup-email">Email</label>
         <span className={styles.control}><EnvelopeSimple size={18} aria-hidden="true" /><input id="signup-email" className={styles.input} type="email" autoComplete="email" placeholder="you@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} required /></span>
-      </label>
-      <label className={styles.field} htmlFor="signup-password">
-        <span className={styles.label}>Password</span>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="signup-password">Password</label>
         <span className={styles.fieldHint}>Minimum 8 characters</span>
         <span className={styles.control}>
           <LockKey size={18} aria-hidden="true" />
           <input id="signup-password" className={styles.input} type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a secure password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <button className={styles.reveal} type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide passwords" : "Show passwords"}>{showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}</button>
         </span>
-      </label>
-      <label className={styles.field} htmlFor="signup-confirm">
-        <span className={styles.label}>Confirm password</span>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="signup-confirm">Confirm password</label>
         <span className={styles.control}><LockKey size={18} aria-hidden="true" /><input id="signup-confirm" className={styles.input} type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Repeat your password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></span>
-      </label>
+      </div>
       {err ? <AuthNotice tone="error">{err}</AuthNotice> : null}
       {notice ? <AuthNotice tone="success">{notice}</AuthNotice> : null}
       <button type="submit" disabled={busy} className={styles.submit}>{busy ? "Creating account…" : <>Create account <ArrowRight size={17} /></>}</button>
